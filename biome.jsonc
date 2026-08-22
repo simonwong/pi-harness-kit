@@ -1,0 +1,18 @@
+{
+  "extends": ["ultracite/biome/core"],
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "useSortedPackageJson": "off"
+      }
+    }
+  },
+  "linter": {
+    "rules": {
+      "suspicious": {
+        "useAwait": "off"
+      }
+    }
+  }
+}
