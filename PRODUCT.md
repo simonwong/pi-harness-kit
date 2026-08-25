@@ -1,0 +1,57 @@
+# Product
+
+<!-- impeccable:product-schema 1 -->
+
+## Platform
+
+terminal
+
+## Stack
+
+A TypeScript pi package built against the documented `@earendil-works/pi-coding-agent` Extension and TUI APIs. The repository may contain multiple extensions; its eventual package topology remains an explicit product decision.
+
+## Users
+
+The primary user is a pi user working through long, tool-heavy coding sessions in a terminal. The local v1 is evaluated in the maintainer's Ghostty and truecolor workflow before any public release commitment.
+
+## Product Purpose
+
+Make pi easier and more pleasant to operate by improving how users compose requests, scan conversation evidence, understand current activity, and inspect context. Success means a local v1 that feels calmer, clearer, and faster without turning pi into a clone of another coding agent.
+
+## Positioning
+
+A lightweight, pi-native UI/UX extension suite: it borrows proven information architecture from Claude Code, Codex, and existing pi extensions while remaining incremental, reversible, theme-native, and grounded in pi's public APIs.
+
+## Operating Context
+
+The product runs inside pi's terminal interface during streaming responses, parallel tool calls, long outputs, errors, cancellation, context growth, and complex prompt composition. Initial acceptance targets Ghostty with truecolor and includes graceful behavior at narrower terminal widths.
+
+## Capabilities and Constraints
+
+- Product capabilities are organized into Composer, Transcript, Activity, and Inspector zones; Host Chrome is a scarce host surface, not a product zone.
+- The exact v1 capability set, suite name, package boundaries, and implementation order remain Roadmap decisions.
+- The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals.
+- npm publication, a public stability promise, and a broad terminal compatibility matrix are outside the current effort.
+- Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; merge requires maintainer confirmation.
+
+## Brand Commitments
+
+The experience is pi-native rather than a pixel-level Claude Code or Codex imitation. It uses the active pi theme's semantic language; personality comes from hierarchy, rhythm, copy, and restrained motion rather than a forced brand palette. `better-*` is not an accepted naming decision.
+
+## Evidence on Hand
+
+- [Pi UI/UX extension landscape research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-ui-ux-landscape/docs/research/pi-ui-ux-landscape.md)
+- [Extension naming and package topology research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-extension-naming/docs/research/pi-extension-naming-and-topology.md)
+- No user study, benchmark, public compatibility evidence, or stable release evidence exists yet; future work must not fabricate it.
+
+## Product Principles
+
+- **Do not interrupt expression:** Composer enhancements reduce syntax recall and mode switching while preserving understandable, reversible user intent.
+- **Scan first, then inspect evidence:** Transcript defaults to compact, truthful summaries whose underlying evidence remains losslessly recoverable.
+- **Stay calm and truthful:** Activity reflects real state, never invented progress; continuous ambient motion exists only while the agent is active.
+- **Make depth actionable:** Inspector reveals detail on demand so the user can compact, expand, configure, or troubleshoot.
+- **Enhance incrementally:** Capabilities have useful defaults, remain individually reversible, and retain a clear escape hatch back to native pi behavior.
+
+## Accessibility & Inclusion
+
+Primary actions remain keyboard-reachable, motion can be disabled, and idle UI remains still. Composer work must preserve terminal IME behavior; rendered output must account for narrow widths and wide CJK characters.
