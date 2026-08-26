@@ -8,7 +8,7 @@ terminal
 
 ## Stack
 
-A TypeScript multi-package repository built against the documented `@earendil-works/pi-coding-agent` Extension and TUI APIs. Pi UI is composed of independently installable Surface packages; the repository root is the local development aggregate.
+A TypeScript multi-package repository built against the documented `@earendil-works/pi-coding-agent` Extension and TUI APIs. Pi UI is composed of independently installable Surface packages; the repository root is the local development aggregate. The package-local runtime architecture is defined in [`docs/architecture/pi-ui-public-api.md`](docs/architecture/pi-ui-public-api.md).
 
 ## Users
 
@@ -34,10 +34,10 @@ The product runs inside pi's terminal interface during streaming responses, para
 - `pi-ui-messages`, `pi-ui-input`, `pi-ui-status`, and `pi-ui-inspector` are default Surface forms. An owner scope and publishable versions are chosen only in a future npm publication effort.
 - Capabilities remain independently configurable inside their owning Surface package. A Capability becomes its own package only when independent installation, dependencies, compatibility risk, or release cadence creates a real boundary.
 - Surface packages do not directly depend on one another. Cross-Surface Capabilities belong to their primary user-entry Surface and may render in secondary Surfaces through public pi APIs.
-- Surface packages share a configuration contract, including a global `enabled` escape hatch, but no shared runtime. A core or internal shared package requires at least two real, non-trivial consumers.
+- Surface packages share a versioned, two-layer `pi-ui.json` contract, including a global `enabled` escape hatch and motion preference, but no shared runtime. Each package exposes only pi's default extension entry and keeps its runtime/test seam package-local. A core or internal shared package requires at least two real, non-trivial consumers.
 - The root `pi-harness-kit` manifest explicitly aggregates only entries in the current Release Scope, and `.pi/settings.json` loads that root. A Surface entry must not also be loaded directly in the same environment.
 - No public `pi-ui` aggregate/meta package exists until a publication effort proves a one-install user journey.
-- The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals.
+- The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals. TUI is the only enhanced mode in v1; RPC, JSON, and print modes safely preserve native behavior.
 - npm publication is the Release Horizon immediately after local v1 acceptance. A public stability promise and broad terminal compatibility matrix must be decided in that fresh publication effort.
 - Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; merge requires maintainer confirmation.
 
@@ -49,6 +49,7 @@ Naming is descriptive and Surface-first: **Pi UI** is the product family, `pi-ui
 
 ## Evidence on Hand
 
+- [Pi UI public-API architecture](docs/architecture/pi-ui-public-api.md)
 - [Pi UI Product Roadmap](docs/product-roadmap.md)
 - [Pi UI/UX extension landscape research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-ui-ux-landscape/docs/research/pi-ui-ux-landscape.md)
 - [Extension naming and package topology research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-extension-naming/docs/research/pi-extension-naming-and-topology.md)
