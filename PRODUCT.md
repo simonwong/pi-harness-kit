@@ -39,7 +39,7 @@ The product runs inside pi's terminal interface during streaming responses, para
 - No public `pi-ui` aggregate/meta package exists until a publication effort proves a one-install user journey.
 - The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals. TUI is the only enhanced mode in v1; RPC, JSON, and print modes safely preserve native behavior.
 - npm publication is the Release Horizon immediately after local v1 acceptance. A public stability promise and broad terminal compatibility matrix must be decided in that fresh publication effort.
-- Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; merge requires maintainer confirmation.
+- Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; it must satisfy the [Pi UI local-v1 quality contract](docs/engineering/pi-ui-v1-quality-contract.md), and merge requires maintainer confirmation.
 
 ## Brand Commitments
 
@@ -50,6 +50,8 @@ Naming is descriptive and Surface-first: **Pi UI** is the product family, `pi-ui
 ## Evidence on Hand
 
 - [Pi UI public-API architecture](docs/architecture/pi-ui-public-api.md)
+- [Pi UI local-v1 quality contract](docs/engineering/pi-ui-v1-quality-contract.md)
+- [Pi extension testing-practices research](docs/research/pi-extension-testing-practices.md)
 - [Pi UI Product Roadmap](docs/product-roadmap.md)
 - [Pi UI/UX extension landscape research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-ui-ux-landscape/docs/research/pi-ui-ux-landscape.md)
 - [Extension naming and package topology research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-extension-naming/docs/research/pi-extension-naming-and-topology.md)
