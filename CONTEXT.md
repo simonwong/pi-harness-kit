@@ -1,8 +1,16 @@
-# Pi UI/UX Extension Suite
+# Pi UI
 
-The shared language for a suite of pi-native enhancements that make terminal agent sessions easier to compose, follow, and inspect. These product concepts do not prescribe package or source-code boundaries.
+The shared language for the Pi UI product family: pi-native enhancements that make terminal agent sessions easier to compose, follow, and inspect. Pi UI lives in the multi-product `pi-harness-kit` repository.
 
 ## Language
+
+**Pi UI**:
+The descriptive product family for UI/UX enhancements in this repository.
+_Avoid_: Better Pi, Pi UI/UX Extension Suite
+
+**Surface**:
+A user-recognizable visual area that can anchor a package name, independent of the user-task boundary described by an Interface Zone.
+_Avoid_: Interface Zone, component
 
 **Capability**:
 A candidate user-facing enhancement evaluated for inclusion in the Product Roadmap and a release scope.
