@@ -47,3 +47,7 @@ _Avoid_: Reset button, fallback mode
 **Release Scope**:
 The finite set of Roadmap capabilities selected for one delivery effort; the current effort targets a local, daily-usable v1.
 _Avoid_: Full Roadmap, backlog
+
+**Release Horizon**:
+An ordered product outcome after the current Release Scope, recorded as direction without silently joining the current effort.
+_Avoid_: Phase, backlog
