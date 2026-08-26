@@ -29,7 +29,7 @@ The product runs inside pi's terminal interface during streaming responses, para
 ## Capabilities and Constraints
 
 - Product capabilities are organized into Composer, Transcript, Activity, and Inspector zones; Host Chrome is a scarce host surface, not a product zone.
-- The product family is **Pi UI** within the multi-product `pi-harness-kit` repository. The exact v1 Capability set and implementation order remain Roadmap decisions.
+- The product family is **Pi UI** within the multi-product `pi-harness-kit` repository. The v1 Release Scope and implementation order are defined in [`docs/product-roadmap.md`](docs/product-roadmap.md).
 - Each selected Surface is created just in time as one `packages/pi-ui-<surface>` package with one extension entry, `version: 0.0.0`, and `private: true`; empty Surface packages are not pre-created.
 - `pi-ui-messages`, `pi-ui-input`, `pi-ui-status`, and `pi-ui-inspector` are default Surface forms. An owner scope and publishable versions are chosen only in a future npm publication effort.
 - Capabilities remain independently configurable inside their owning Surface package. A Capability becomes its own package only when independent installation, dependencies, compatibility risk, or release cadence creates a real boundary.
@@ -38,7 +38,7 @@ The product runs inside pi's terminal interface during streaming responses, para
 - The root `pi-harness-kit` manifest explicitly aggregates only entries in the current Release Scope, and `.pi/settings.json` loads that root. A Surface entry must not also be loaded directly in the same environment.
 - No public `pi-ui` aggregate/meta package exists until a publication effort proves a one-install user journey.
 - The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals.
-- npm publication, a public stability promise, and a broad terminal compatibility matrix are outside the current effort.
+- npm publication is the Release Horizon immediately after local v1 acceptance. A public stability promise and broad terminal compatibility matrix must be decided in that fresh publication effort.
 - Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; merge requires maintainer confirmation.
 
 ## Brand Commitments
@@ -49,6 +49,7 @@ Naming is descriptive and Surface-first: **Pi UI** is the product family, `pi-ui
 
 ## Evidence on Hand
 
+- [Pi UI Product Roadmap](docs/product-roadmap.md)
 - [Pi UI/UX extension landscape research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-ui-ux-landscape/docs/research/pi-ui-ux-landscape.md)
 - [Extension naming and package topology research](https://github.com/simonwong/pi-harness-kit/blob/research/pi-extension-naming/docs/research/pi-extension-naming-and-topology.md)
 - No user study, benchmark, public compatibility evidence, or stable release evidence exists yet; future work must not fabricate it.
