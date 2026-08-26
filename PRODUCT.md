@@ -20,7 +20,7 @@ Make pi easier and more pleasant to operate by improving how users compose reque
 
 ## Positioning
 
-A lightweight, pi-native UI/UX extension suite: it borrows proven information architecture from Claude Code, Codex, and existing pi extensions while remaining incremental, reversible, theme-native, and grounded in pi's public APIs.
+Pi UI is a lightweight, pi-native UI/UX extension family: it borrows proven information architecture from Claude Code, Codex, and existing pi extensions while remaining incremental, reversible, theme-native, and grounded in pi's public APIs.
 
 ## Operating Context
 
@@ -29,14 +29,18 @@ The product runs inside pi's terminal interface during streaming responses, para
 ## Capabilities and Constraints
 
 - Product capabilities are organized into Composer, Transcript, Activity, and Inspector zones; Host Chrome is a scarce host surface, not a product zone.
-- The exact v1 capability set, suite name, package boundaries, and implementation order remain Roadmap decisions.
+- The product family is **Pi UI** within the multi-product `pi-harness-kit` repository. The exact v1 capability set, package boundaries, and implementation order remain Roadmap decisions.
+- Future packages use an owner scope chosen at publication time and the `pi-ui[-<surface>]` form by default: `pi-ui-messages`, `pi-ui-input`, `pi-ui-status`, and `pi-ui-inspector` are default Surface forms, not pre-created packages.
+- Capabilities normally remain independently configurable inside their Surface package. A Capability becomes its own package only when independent installation, dependencies, compatibility risk, or release cadence creates a real boundary.
 - The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals.
 - npm publication, a public stability promise, and a broad terminal compatibility matrix are outside the current effort.
 - Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; merge requires maintainer confirmation.
 
 ## Brand Commitments
 
-The experience is pi-native rather than a pixel-level Claude Code or Codex imitation. It uses the active pi theme's semantic language; personality comes from hierarchy, rhythm, copy, and restrained motion rather than a forced brand palette. `better-*` is not an accepted naming decision.
+The experience is pi-native rather than a pixel-level Claude Code or Codex imitation. It uses the active pi theme's semantic language; personality comes from hierarchy, rhythm, copy, and restrained motion rather than a forced brand palette.
+
+Naming is descriptive and Surface-first: **Pi UI** is the product family, `pi-ui-*` is the package family token, and `better-*` is excluded. Exact package names are chosen only when a package boundary is real, followed by an npm registry and near-name check.
 
 ## Evidence on Hand
 
