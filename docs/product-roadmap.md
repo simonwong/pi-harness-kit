@@ -13,14 +13,14 @@ Motion is owned by each Capability rather than delivered as a separate package o
 These decisions and tasks gate all feature implementation:
 
 1. [选择公共 API 架构并记录必要 ADR](https://github.com/simonwong/pi-harness-kit/issues/8).
-2. [定义 v1 质量门槛与 PR 契约](https://github.com/simonwong/pi-harness-kit/issues/9).
+2. [定义 v1 质量门槛与 PR 契约](https://github.com/simonwong/pi-harness-kit/issues/9), recorded in the [Pi UI local-v1 quality contract](./engineering/pi-ui-v1-quality-contract.md).
 3. [按需初始化首个扩展子包](https://github.com/simonwong/pi-harness-kit/issues/10), starting with `pi-ui-status`.
 
 The foundation follows [ADR 0001](./adr/0001-organize-pi-ui-as-independent-surface-packages.md): one independent package per selected Surface, one extension entry per package, a shared configuration contract without a shared runtime, and an explicit root development aggregate.
 
 ## Horizon 1 — Local daily-usable v1
 
-The v1 Release Scope contains six Capability PRs across three Surfaces. They are implemented sequentially from the latest `main`.
+The v1 Release Scope contains six Capability PRs across three Surfaces. They are implemented sequentially from the latest `main`. Every Capability PR must satisfy the automated, conditional, documentation, and focused Ghostty gates in the [Pi UI local-v1 quality contract](./engineering/pi-ui-v1-quality-contract.md).
 
 | Order | Capability | Surface | Public API seam | Risk | v1 boundary |
 | --- | --- | --- | --- | --- | --- |
