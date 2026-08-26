@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["node"]
+  },
+  "include": [
+    "extensions/**/*.ts",
+    "packages/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts"
+  ]
+}

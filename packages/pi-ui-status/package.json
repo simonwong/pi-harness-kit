@@ -1,0 +1,23 @@
+{
+  "name": "pi-ui-status",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pi UI Status Surface",
+  "keywords": [
+    "pi-extension",
+    "pi-package",
+    "pi-ui"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  }
+}

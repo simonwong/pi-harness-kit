@@ -14,4 +14,4 @@ This is a single-context repository with a root `CONTEXT.md` and root-level ADRs
 
 ### Pi UI engineering
 
-Pi UI Capability PRs follow `docs/engineering/pi-ui-v1-quality-contract.md`.
+Pi UI Capability PRs follow `docs/engineering/pi-ui-v1-quality-contract.md`. Start each Capability with `/to-spec`, turn the approved spec into work with `/to-tickets`, then implement it with `/implement`.
