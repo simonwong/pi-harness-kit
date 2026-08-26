@@ -2,17 +2,22 @@
   "name": "pi-harness-kit",
   "version": "0.0.0",
   "description": "pi harness kit",
+  "type": "module",
   "keywords": [
     "pi-harness-kit"
   ],
   "author": "Simon <wsj_simon@163.com>",
   "scripts": {
     "check": "ultracite check",
-    "fix": "ultracite fix"
+    "fix": "ultracite fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "verify": "pnpm check && pnpm typecheck && pnpm test"
   },
   "pi": {
     "extensions": [
-      "./extensions"
+      "./packages/pi-ui-status/src/index.ts"
     ],
     "skills": [
       "./skills"
@@ -30,7 +35,10 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
-    "ultracite": "7.10.5"
+    "@types/node": "22.19.0",
+    "typescript": "5.9.3",
+    "ultracite": "7.10.5",
+    "vitest": "4.1.9"
   },
   "packageManager": "pnpm@10.33.4"
 }

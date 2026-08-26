@@ -19,6 +19,10 @@ A Capability PR is complete only when all of the following are true:
 9. Residual limitations are explicit. A known failure inside the ticket boundary is merge-blocking rather than silently deferred.
 10. The maintainer confirms merge after tests and review pass.
 
+## Capability delivery flow
+
+Every Capability starts with `/to-spec`, converts the approved specification into executable work through `/to-tickets`, and enters implementation only through `/implement`. Foundation scaffolding such as issue #10 is not a Capability and does not manufacture an empty feature specification.
+
 ## Executable baseline
 
 Issue [#10](https://github.com/simonwong/pi-harness-kit/issues/10) establishes the baseline before the first Capability implementation:

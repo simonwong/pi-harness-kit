@@ -1,0 +1,340 @@
+[
+  {
+    "id": "files-absent-use-defaults",
+    "trusted": true,
+    "globalContents": null,
+    "projectContents": null,
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["working", "statusCues"],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "trusted-project-overrides-capabilities",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"status\":{\"working\":{\"enabled\":false}}}",
+    "projectContents": "{\"version\":1,\"motion\":\"reduced\",\"status\":{\"working\":{\"enabled\":true},\"statusCues\":{\"enabled\":false}}}",
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["working"],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "untrusted-project-is-ignored",
+    "trusted": false,
+    "globalContents": "{\"version\":1,\"motion\":\"reduced\"}",
+    "projectContents": "not json",
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["working", "statusCues"],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "global-disable-cannot-be-reenabled",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"enabled\":false}",
+    "projectContents": "{\"version\":1,\"enabled\":true}",
+    "expected": {
+      "status": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "motion-uses-most-restrictive-layer",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"motion\":\"reduced\"}",
+    "projectContents": "{\"version\":1,\"motion\":\"full\"}",
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["working", "statusCues"],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "reduced",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "project-can-restrict-motion-to-off",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"motion\":\"full\"}",
+    "projectContents": "{\"version\":1,\"motion\":\"off\"}",
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "off",
+        "enabledCapabilities": ["working", "statusCues"],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": false,
+        "motion": "off",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "off",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "unrelated-and-unknown-sections-are-ignored",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"future\":true,\"inspector\":{\"contextHealth\":{\"enabled\":false}}}",
+    "projectContents": null,
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["working", "statusCues"],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "invalid-global-json-keeps-surfaces-native",
+    "trusted": true,
+    "globalContents": "{",
+    "projectContents": null,
+    "expected": {
+      "status": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      },
+      "messages": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      },
+      "input": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      }
+    }
+  },
+  {
+    "id": "invalid-trusted-project-json-keeps-surfaces-native",
+    "trusted": true,
+    "globalContents": "{\"version\":1}",
+    "projectContents": "not json",
+    "expected": {
+      "status": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      },
+      "messages": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      },
+      "input": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      }
+    }
+  },
+  {
+    "id": "unsupported-version-keeps-surfaces-native",
+    "trusted": true,
+    "globalContents": "{\"version\":2}",
+    "projectContents": null,
+    "expected": {
+      "status": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      },
+      "messages": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      },
+      "input": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      }
+    }
+  },
+  {
+    "id": "invalid-status-root-is-isolated",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"status\":[]}",
+    "projectContents": null,
+    "expected": {
+      "status": {
+        "native": true,
+        "motion": "full",
+        "enabledCapabilities": [],
+        "diagnosticCount": 1
+      },
+      "messages": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "invalid-capability-is-isolated",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"status\":{\"working\":\"invalid\",\"statusCues\":{\"enabled\":true}}}",
+    "projectContents": null,
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["statusCues"],
+        "diagnosticCount": 1
+      },
+      "messages": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  },
+  {
+    "id": "missing-surface-section-preserves-defaults",
+    "trusted": true,
+    "globalContents": "{\"version\":1,\"enabled\":true}",
+    "projectContents": "{\"version\":1}",
+    "expected": {
+      "status": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["working", "statusCues"],
+        "diagnosticCount": 0
+      },
+      "messages": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["markdown", "compactThinking", "toolCards"],
+        "diagnosticCount": 0
+      },
+      "input": {
+        "native": false,
+        "motion": "full",
+        "enabledCapabilities": ["multiSkill"],
+        "diagnosticCount": 0
+      }
+    }
+  }
+]
