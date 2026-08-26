@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>原型 — Working 视觉方案</title>
+    <!-- Three realistic Ghostty Working-row variants, switchable by ?variant=. -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --page: #0d100f;
+        --surface: #151918;
+        --surface-raised: #1b201e;
+        --line: #2b322f;
+        --ink: #e6ece8;
+        --muted: #89938d;
+        --faint: #5e6862;
+        --accent: #86c79c;
+        --accent-soft: #284534;
+        --danger: #ef8b82;
+        --warning: #e2c26d;
+        --code: #b9c6be;
+        --terminal-width: 80ch;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-height: 100%;
+        background: var(--page);
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 50% 0%, rgb(134 199 156 / 7%), transparent 32rem),
+          var(--page);
+        color: var(--ink);
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        padding: 0.58rem 0.78rem;
+      }
+
+      button:hover {
+        border-color: var(--accent);
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      button.active {
+        border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+        background: var(--accent-soft);
+        color: #dff5e6;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 122px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: end;
+        margin-bottom: 24px;
+      }
+
+      .topbar h1 {
+        margin: 0 0 7px;
+        font-size: clamp(1.55rem, 3vw, 2.35rem);
+        letter-spacing: -0.025em;
+      }
+
+      .topbar p {
+        max-width: 720px;
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .prototype-mark {
+        color: var(--accent);
+        font-size: 0.75rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 282px;
+        gap: 18px;
+        align-items: start;
+      }
+
+      .terminal-stage {
+        display: grid;
+        min-height: 680px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #101312;
+        padding: 32px 18px;
+        overflow: hidden;
+      }
+
+      .terminal {
+        width: min(100%, var(--terminal-width));
+        border: 1px solid #343c38;
+        border-radius: 9px;
+        background: #111412;
+        box-shadow: 0 24px 60px rgb(0 0 0 / 36%);
+        color: #dfe7e1;
+        font-family:
+          "SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono",
+          monospace;
+        font-size: 13px;
+        line-height: 1.55;
+        overflow: hidden;
+      }
+
+      .windowbar {
+        display: flex;
+        align-items: center;
+        min-height: 34px;
+        border-bottom: 1px solid #2b322f;
+        padding: 0 11px;
+        color: #727c76;
+      }
+
+      .lights {
+        display: flex;
+        gap: 6px;
+        margin-right: 12px;
+      }
+
+      .lights i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #48514c;
+      }
+
+      .window-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .transcript {
+        min-height: 510px;
+        padding: 19px 18px 13px;
+      }
+
+      .line {
+        min-height: 1.55em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .line + .line {
+        margin-top: 2px;
+      }
+
+      .blank {
+        height: 12px;
+      }
+
+      .user::before {
+        content: "> ";
+        color: var(--accent);
+      }
+
+      .assistant {
+        color: #cdd7d0;
+      }
+
+      .assistant::before {
+        content: "  ";
+      }
+
+      .tool {
+        color: #87928b;
+      }
+
+      .tool::before {
+        content: "  ├─ ";
+        color: #59635d;
+      }
+
+      .tool.done::before {
+        content: "  └─ ";
+      }
+
+      .tool-name {
+        color: #acb8b0;
+      }
+
+      .tool-result {
+        color: #707a74;
+      }
+
+      .working-row {
+        display: flex;
+        min-height: 24px;
+        align-items: baseline;
+        margin-top: 14px;
+        color: #bfc9c2;
+        white-space: nowrap;
+      }
+
+      .working-indicator {
+        display: inline-block;
+        min-width: 1.45em;
+        color: var(--accent);
+      }
+
+      .working-composite {
+        color: #bfc9c2;
+      }
+
+      .working-composite .trail {
+        color: var(--accent);
+      }
+
+      .native-outcome {
+        min-height: 24px;
+        margin-top: 14px;
+        color: #89938d;
+        white-space: normal;
+      }
+
+      .native-outcome.error {
+        color: var(--danger);
+      }
+
+      .native-outcome.cancelled {
+        color: var(--warning);
+      }
+
+      .editor {
+        border-top: 1px solid #2b322f;
+        padding: 12px 18px 11px;
+      }
+
+      .editor-row {
+        display: flex;
+        gap: 8px;
+        color: #69736d;
+      }
+
+      .editor-row::before {
+        content: ">";
+        color: var(--accent);
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 7px;
+        color: #59635d;
+        font-size: 11px;
+      }
+
+      .side {
+        display: grid;
+        gap: 12px;
+      }
+
+      .control-block {
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+      }
+
+      .control-block:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .control-title {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .side-copy {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .variant-name {
+        margin: 0 0 7px;
+        font-size: 1.15rem;
+      }
+
+      .spec-list {
+        display: grid;
+        gap: 8px;
+        margin: 14px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .spec-list li {
+        display: grid;
+        grid-template-columns: 78px 1fr;
+        gap: 8px;
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+        font-size: 0.8rem;
+      }
+
+      .spec-list span:first-child {
+        color: var(--faint);
+      }
+
+      .spec-list code {
+        color: var(--code);
+        font-family: "SFMono-Regular", Consolas, monospace;
+        overflow-wrap: anywhere;
+      }
+
+      .switcher {
+        position: fixed;
+        z-index: 10;
+        left: 50%;
+        bottom: 24px;
+        display: grid;
+        grid-template-columns: 42px minmax(210px, auto) 42px;
+        align-items: center;
+        transform: translateX(-50%);
+        border: 1px solid #46504a;
+        border-radius: 999px;
+        background: #e8eee9;
+        box-shadow: 0 16px 42px rgb(0 0 0 / 46%);
+        color: #18201b;
+        overflow: hidden;
+      }
+
+      .switcher button {
+        height: 42px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 1.05rem;
+        padding: 0;
+      }
+
+      .switcher button:hover {
+        background: #d9e3dc;
+      }
+
+      .switcher-label {
+        border-inline: 1px solid #c5d0c8;
+        padding: 0 16px;
+        font-size: 0.82rem;
+        font-weight: 750;
+        line-height: 42px;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .keyboard-note {
+        position: fixed;
+        right: 18px;
+        bottom: 17px;
+        color: #66716a;
+        font-size: 0.72rem;
+      }
+
+      @media (max-width: 900px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .terminal-stage {
+          min-height: auto;
+        }
+
+        .side {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 620px) {
+        main {
+          width: min(100% - 18px, 1180px);
+          padding-top: 22px;
+        }
+
+        .topbar {
+          align-items: start;
+          flex-direction: column-reverse;
+        }
+
+        .terminal-stage {
+          padding: 12px 6px;
+        }
+
+        .terminal {
+          font-size: 12px;
+        }
+
+        .transcript {
+          min-height: 430px;
+          padding-inline: 11px;
+        }
+
+        .editor {
+          padding-inline: 11px;
+        }
+
+        .side {
+          grid-template-columns: 1fr;
+        }
+
+        .keyboard-note {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="topbar">
+        <div>
+          <h1>Working 视觉原型</h1>
+          <p>
+            这次只看真实终端里的具体样式。切换底部方案，触发工作中、完成、取消和错误；
+            再比较 40/80 列与完整、减弱、关闭动效。
+          </p>
+        </div>
+        <span class="prototype-mark">THROWAWAY · ISSUE #29</span>
+      </header>
+
+      <div class="workspace">
+        <section class="terminal-stage" aria-label="Ghostty 终端预览">
+          <div class="terminal" id="terminal">
+            <div class="windowbar">
+              <span class="lights"><i></i><i></i><i></i></span>
+              <span class="window-title" id="window-title"></span>
+            </div>
+            <div class="transcript">
+              <div class="line user">请检查当前分支并修复失败的测试</div>
+              <div class="blank"></div>
+              <div class="line assistant">我先确认失败范围和最近的改动。</div>
+              <div class="line tool"><span class="tool-name">bash</span> pnpm test</div>
+              <div class="line tool"><span class="tool-name">read</span> packages/pi-ui-status/src/status-extension.ts</div>
+              <div class="line tool done"><span class="tool-result">2 个测试失败 · 已定位 lifecycle cleanup</span></div>
+              <div class="blank"></div>
+              <div class="line assistant">正在验证修复不会影响 reload 和取消路径。</div>
+              <div id="activity-slot"></div>
+            </div>
+            <div class="editor">
+              <div class="editor-row">输入消息，或按 Esc 取消当前工作</div>
+              <div class="footer">
+                <span>pi · claude-sonnet · thinking high</span>
+                <span>↑12k ↓1.8k · 42%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <section class="control-block">
+            <span class="control-title">当前方案</span>
+            <h2 class="variant-name" id="variant-name"></h2>
+            <p class="side-copy" id="variant-description"></p>
+            <ul class="spec-list" id="variant-spec"></ul>
+          </section>
+
+          <section class="control-block">
+            <span class="control-title">真实状态</span>
+            <div class="button-row" id="state-controls"></div>
+          </section>
+
+          <section class="control-block">
+            <span class="control-title">动效偏好</span>
+            <div class="button-row" id="motion-controls"></div>
+          </section>
+
+          <section class="control-block">
+            <span class="control-title">Working 文案</span>
+            <div class="button-row" id="copy-controls"></div>
+          </section>
+
+          <section class="control-block">
+            <span class="control-title">终端宽度</span>
+            <div class="button-row" id="width-controls"></div>
+          </section>
+
+          <section class="control-block">
+            <span class="control-title">设计边界</span>
+            <p class="side-copy">
+              所有动效只表达“正在工作”，不显示百分比或虚构阶段。最终结束后 Working row
+              消失，完成、取消和错误由原生 Transcript 证据表达。
+            </p>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <nav class="switcher" aria-label="视觉方案切换">
+      <button id="previous-variant" aria-label="上一个方案">←</button>
+      <span class="switcher-label" id="switcher-label"></span>
+      <button id="next-variant" aria-label="下一个方案">→</button>
+    </nav>
+    <p class="keyboard-note">也可以使用键盘 ← → 切换</p>
+
+    <script>
+      const variants = [
+        {
+          id: "native",
+          key: "A",
+          name: "原生收束",
+          description: "保留 Pi 熟悉的 braille spinner，只收紧颜色、文案和生命周期。最稳妥，也最接近 native。",
+          active: {
+            frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
+            interval: 100,
+            placement: "leading",
+          },
+          specs: [
+            ["形状", "braille spinner"],
+            ["节奏", "100ms · host 原生感"],
+            ["层级", "indicator accent / copy muted"],
+            ["风险", "辨识度较低"],
+          ],
+        },
+        {
+          id: "pulse",
+          key: "B",
+          name: "克制脉冲",
+          description: "一个点从轻到重再回落，像稳定呼吸而不是转圈。辨识度更强，但仍保持单行和低噪声。",
+          active: {
+            frames: ["·", "•", "●", "•"],
+            interval: 160,
+            placement: "leading",
+          },
+          specs: [
+            ["形状", "· • ● •"],
+            ["节奏", "160ms · 6.25Hz"],
+            ["层级", "只有点使用 accent"],
+            ["风险", "full 模式仍有持续动效"],
+          ],
+        },
+        {
+          id: "trailing",
+          key: "C",
+          name: "尾随信号",
+          description: "文案先出现，活动点在末尾变化。视觉重心从 spinner 转向语义，但与 Pi 的前置 indicator 习惯差异最大。",
+          active: {
+            frames: ["·", "•", "●", "•"],
+            interval: 180,
+            placement: "trailing",
+          },
+          specs: [
+            ["形状", "Working · / • / ●"],
+            ["节奏", "180ms · 5.56Hz"],
+            ["层级", "先读文案，再看到 activity"],
+            ["风险", "需要把完整 row 放进 indicator frames"],
+          ],
+        },
+        {
+          id: "static",
+          key: "D",
+          name: "静态信标",
+          description: "一个固定语义点加文案，完全不动。状态最安静，但只能靠出现和消失表达开始与结束。",
+          active: {
+            frames: ["●"],
+            interval: null,
+            placement: "leading",
+          },
+          specs: [
+            ["形状", "●"],
+            ["节奏", "静态"],
+            ["层级", "accent 点 + muted 文案"],
+            ["风险", "长任务中 activity 感最弱"],
+          ],
+        },
+      ];
+
+      const stateOptions = [
+        { id: "working", label: "工作中" },
+        { id: "done", label: "已完成" },
+        { id: "cancelled", label: "已取消" },
+        { id: "error", label: "错误" },
+      ];
+      const motionOptions = [
+        { id: "full", label: "完整" },
+        { id: "reduced", label: "减弱" },
+        { id: "off", label: "关闭" },
+      ];
+      const copyOptions = [
+        { id: "Working", label: "Working" },
+        { id: "Working…", label: "Working…" },
+        { id: "处理中", label: "处理中" },
+      ];
+      const widthOptions = [
+        { id: 40, label: "40 列" },
+        { id: 80, label: "80 列" },
+      ];
+
+      let state = {
+        variant: new URLSearchParams(location.search).get("variant") ?? "pulse",
+        activity: "working",
+        motion: "full",
+        copy: "Working",
+        width: 80,
+        frame: 0,
+      };
+      if (!variants.some((variant) => variant.id === state.variant)) {
+        state.variant = "pulse";
+      }
+
+      let frameTimer;
+      const activitySlot = document.querySelector("#activity-slot");
+      const terminal = document.querySelector("#terminal");
+      const windowTitle = document.querySelector("#window-title");
+      const variantName = document.querySelector("#variant-name");
+      const variantDescription = document.querySelector("#variant-description");
+      const variantSpec = document.querySelector("#variant-spec");
+      const switcherLabel = document.querySelector("#switcher-label");
+
+      const selectedVariant = () =>
+        variants.find((variant) => variant.id === state.variant);
+
+      const effectiveFrames = () => {
+        const frames = selectedVariant().active.frames;
+        if (state.motion === "full") return frames;
+        if (state.motion === "reduced") return [frames.at(-1) ?? "•"];
+        return ["•"];
+      };
+
+      const renderActivity = () => {
+        if (state.activity !== "working") {
+          const outcomes = {
+            done: {
+              className: "native-outcome",
+              text: "✓ 已完成修复并通过全部测试。",
+            },
+            cancelled: {
+              className: "native-outcome cancelled",
+              text: "已取消当前请求。",
+            },
+            error: {
+              className: "native-outcome error",
+              text: "Error: provider request failed before completion.",
+            },
+          };
+          const outcome = outcomes[state.activity];
+          activitySlot.innerHTML = `<div class="${outcome.className}">${outcome.text}</div>`;
+          return;
+        }
+
+        const variant = selectedVariant();
+        const frames = effectiveFrames();
+        const frame = frames[state.frame % frames.length] ?? "";
+        if (variant.active.placement === "trailing") {
+          activitySlot.innerHTML = `
+            <div class="working-row">
+              <span class="working-composite">${state.copy}<span class="trail"> ${frame}</span></span>
+            </div>`;
+          return;
+        }
+        activitySlot.innerHTML = `
+          <div class="working-row">
+            <span class="working-indicator">${frame}</span><span>${state.copy}</span>
+          </div>`;
+      };
+
+      const restartAnimation = () => {
+        clearInterval(frameTimer);
+        state.frame = 0;
+        const variant = selectedVariant();
+        const frames = effectiveFrames();
+        if (
+          state.activity !== "working" ||
+          state.motion !== "full" ||
+          frames.length < 2 ||
+          !variant.active.interval
+        ) {
+          renderActivity();
+          return;
+        }
+        frameTimer = setInterval(() => {
+          state.frame = (state.frame + 1) % frames.length;
+          renderActivity();
+        }, variant.active.interval);
+        renderActivity();
+      };
+
+      const renderButtons = (selector, options, selected, field) => {
+        const container = document.querySelector(selector);
+        container.innerHTML = options
+          .map(
+            (option) => `<button class="${String(option.id) === String(selected) ? "active" : ""}" data-field="${field}" data-value="${option.id}">${option.label}</button>`
+          )
+          .join("");
+      };
+
+      const render = () => {
+        const variant = selectedVariant();
+        terminal.style.setProperty("--terminal-width", `${state.width}ch`);
+        document.documentElement.style.setProperty(
+          "--terminal-width",
+          `${state.width}ch`
+        );
+        windowTitle.textContent = `${state.width} 列 · Ghostty · truecolor`;
+        variantName.textContent = `${variant.key} — ${variant.name}`;
+        variantDescription.textContent = variant.description;
+        variantSpec.innerHTML = variant.specs
+          .map(
+            ([label, value]) => `<li><span>${label}</span><code>${value}</code></li>`
+          )
+          .join("");
+        switcherLabel.textContent = `${variant.key} — ${variant.name}`;
+        renderButtons("#state-controls", stateOptions, state.activity, "activity");
+        renderButtons("#motion-controls", motionOptions, state.motion, "motion");
+        renderButtons("#copy-controls", copyOptions, state.copy, "copy");
+        renderButtons("#width-controls", widthOptions, state.width, "width");
+        restartAnimation();
+      };
+
+      const selectVariant = (index) => {
+        const normalized = (index + variants.length) % variants.length;
+        state.variant = variants[normalized].id;
+        const url = new URL(location.href);
+        url.searchParams.set("variant", state.variant);
+        history.replaceState({}, "", url);
+        render();
+      };
+
+      document.addEventListener("click", (event) => {
+        const control = event.target.closest("[data-field]");
+        if (control) {
+          const field = control.dataset.field;
+          state[field] = field === "width" ? Number(control.dataset.value) : control.dataset.value;
+          render();
+        }
+      });
+
+      document.querySelector("#previous-variant").addEventListener("click", () => {
+        selectVariant(variants.findIndex((variant) => variant.id === state.variant) - 1);
+      });
+      document.querySelector("#next-variant").addEventListener("click", () => {
+        selectVariant(variants.findIndex((variant) => variant.id === state.variant) + 1);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        const target = event.target;
+        if (target.matches("input, textarea, [contenteditable=true]")) return;
+        const current = variants.findIndex((variant) => variant.id === state.variant);
+        if (event.key === "ArrowLeft") selectVariant(current - 1);
+        if (event.key === "ArrowRight") selectVariant(current + 1);
+      });
+
+      render();
+    </script>
+  </body>
+</html>

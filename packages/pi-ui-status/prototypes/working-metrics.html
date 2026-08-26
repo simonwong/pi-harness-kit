@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>原型 — Working 信息条</title>
+    <!-- Chosen Working direction: nine-dot gather + rotating verb + optional output tokens + elapsed time. -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --page: #0c0f0e;
+        --surface: #141816;
+        --surface-raised: #1a1f1c;
+        --line: #2b322e;
+        --ink: #e5ece7;
+        --muted: #89938d;
+        --faint: #5d6761;
+        --normal: #86c79c;
+        --normal-soft: #294634;
+        --warning: #e1bd61;
+        --danger: #eb7c73;
+        --terminal-width: 80ch;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 50% -10%, rgb(134 199 156 / 8%), transparent 34rem),
+          var(--page);
+        color: var(--ink);
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        padding: 0.56rem 0.72rem;
+      }
+
+      button:hover {
+        border-color: var(--normal);
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--normal);
+        outline-offset: 2px;
+      }
+
+      button.active {
+        border-color: color-mix(in srgb, var(--normal) 68%, var(--line));
+        background: var(--normal-soft);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 122px;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 7px;
+        font-size: clamp(1.6rem, 3vw, 2.4rem);
+        letter-spacing: -0.025em;
+      }
+
+      header p {
+        max-width: 760px;
+        margin-bottom: 0;
+        color: var(--muted);
+      }
+
+      .mark {
+        color: var(--normal);
+        font-size: 0.75rem;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 18px;
+        align-items: start;
+      }
+
+      .stage {
+        display: grid;
+        min-height: 680px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #101311;
+        padding: 30px 14px;
+        overflow: hidden;
+      }
+
+      .terminal {
+        width: min(100%, var(--terminal-width));
+        border: 1px solid #353d38;
+        border-radius: 9px;
+        background: #111412;
+        box-shadow: 0 24px 60px rgb(0 0 0 / 38%);
+        font-family:
+          "SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono",
+          monospace;
+        font-size: 13px;
+        line-height: 1.55;
+        overflow: hidden;
+      }
+
+      .terminal.width-20 .transcript,
+      .terminal.width-20 .editor {
+        padding-right: 0.5ch;
+        padding-left: 0.5ch;
+      }
+
+      .windowbar {
+        display: flex;
+        align-items: center;
+        min-height: 34px;
+        border-bottom: 1px solid #2b322f;
+        padding: 0 11px;
+        color: #727c76;
+      }
+
+      .lights {
+        display: flex;
+        gap: 6px;
+        margin-right: 12px;
+      }
+
+      .lights i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #48514c;
+      }
+
+      .transcript {
+        min-height: 510px;
+        padding: 19px 18px 13px;
+        color: #cdd7d0;
+      }
+
+      .line {
+        min-height: 1.55em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .line + .line {
+        margin-top: 2px;
+      }
+
+      .blank {
+        height: 12px;
+      }
+
+      .user::before {
+        content: "> ";
+        color: var(--normal);
+      }
+
+      .tool {
+        color: #87928b;
+      }
+
+      .tool::before {
+        content: "  ├─ ";
+        color: #59635d;
+      }
+
+      .tool.done::before {
+        content: "  └─ ";
+      }
+
+      .tool-name {
+        color: #acb8b0;
+      }
+
+      .activity {
+        display: flex;
+        min-height: 24px;
+        align-items: baseline;
+        margin-top: 14px;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      .spinner {
+        display: inline-flex;
+        width: 4ch;
+        flex: 0 0 4ch;
+        align-self: center;
+        font-variant-ligatures: none;
+      }
+
+      .indicator-dots {
+        display: grid;
+        width: 3ch;
+        height: 1em;
+        grid-template-columns: repeat(3, 1ch);
+        grid-template-rows: repeat(3, 0.34em);
+        place-items: center;
+        line-height: 0.34em;
+      }
+
+      .activity-copy {
+        display: flex;
+        min-width: 0;
+        align-items: baseline;
+        overflow: hidden;
+      }
+
+      .verb {
+        min-width: 0;
+        overflow: hidden;
+        font-weight: 560;
+        text-overflow: clip;
+      }
+
+      .metadata {
+        min-width: 0;
+        margin-left: 0.55em;
+        overflow: hidden;
+        color: #707a74;
+        font-variant-numeric: tabular-nums;
+        text-overflow: clip;
+      }
+
+      .terminal.width-20 .activity {
+        min-height: 2.3em;
+        align-items: flex-start;
+      }
+
+      .terminal.width-20 .activity-copy {
+        display: grid;
+        grid-template-rows: repeat(2, 1.15em);
+        align-items: center;
+      }
+
+      .terminal.width-20 .metadata {
+        margin-left: 0;
+      }
+
+      .metadata .elapsed {
+        color: currentColor;
+      }
+
+      .tone-normal .spinner,
+      .tone-normal .verb,
+      .tone-normal .elapsed {
+        color: var(--normal);
+      }
+
+      .tone-warning .spinner,
+      .tone-warning .verb,
+      .tone-warning .elapsed {
+        color: var(--warning);
+      }
+
+      .tone-danger .spinner,
+      .tone-danger .verb,
+      .tone-danger .elapsed {
+        color: var(--danger);
+      }
+
+      .spinner .dot-dim,
+      .indicator-zoom .dot-dim {
+        color: var(--faint);
+      }
+
+      .spinner .dot-bright,
+      .indicator-zoom .dot-bright {
+        color: inherit;
+      }
+
+      .outcome {
+        display: flex;
+        min-height: 24px;
+        align-items: baseline;
+        margin-top: 14px;
+        white-space: nowrap;
+      }
+
+      .outcome-mark {
+        width: 4ch;
+        flex: 0 0 4ch;
+        font-weight: 750;
+      }
+
+      .outcome-label {
+        font-weight: 560;
+      }
+
+      .outcome.done {
+        color: var(--normal);
+      }
+
+      .outcome.cancelled {
+        color: var(--warning);
+      }
+
+      .outcome.error {
+        color: var(--danger);
+      }
+
+      .editor {
+        border-top: 1px solid #2b322f;
+        padding: 12px 18px 11px;
+        color: #68726c;
+      }
+
+      .editor-line::before {
+        content: "> ";
+        color: var(--normal);
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 7px;
+        color: #58625c;
+        font-size: 11px;
+      }
+
+      aside {
+        display: grid;
+        gap: 0;
+      }
+
+      .block {
+        border-top: 1px solid var(--line);
+        padding: 15px 0;
+      }
+
+      .block:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 750;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .variant-title {
+        margin-bottom: 6px;
+        font-size: 1.15rem;
+      }
+
+      .indicator-zoom {
+        display: grid;
+        min-height: 86px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        margin-top: 12px;
+        background: #101311;
+        color: var(--normal);
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 3.2rem;
+        line-height: 1;
+        letter-spacing: 0.08em;
+      }
+
+      .indicator-zoom .indicator-dots {
+        width: auto;
+        height: 1.65em;
+        grid-template-columns: repeat(3, 0.8em);
+        grid-template-rows: repeat(3, 0.55em);
+      }
+
+      .indicator-zoom.tone-warning,
+      .indicator-zoom.cancelled {
+        color: var(--warning);
+      }
+
+      .indicator-zoom.tone-danger,
+      .indicator-zoom.error {
+        color: var(--danger);
+      }
+
+      .indicator-zoom.done {
+        color: var(--normal);
+      }
+
+      .description,
+      .note {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .thresholds {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+
+      .threshold {
+        border-top: 2px solid currentColor;
+        padding-top: 7px;
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      .threshold strong {
+        display: block;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .threshold.normal {
+        color: var(--normal);
+      }
+
+      .threshold.warning {
+        color: var(--warning);
+      }
+
+      .threshold.danger {
+        color: var(--danger);
+      }
+
+      .source-note {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 11px;
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .source-note strong {
+        color: var(--ink);
+      }
+
+      .switcher {
+        position: fixed;
+        z-index: 10;
+        left: 50%;
+        bottom: 24px;
+        display: grid;
+        grid-template-columns: 42px minmax(220px, auto) 42px;
+        align-items: center;
+        transform: translateX(-50%);
+        border: 1px solid #46504a;
+        border-radius: 999px;
+        background: #e8eee9;
+        box-shadow: 0 16px 42px rgb(0 0 0 / 48%);
+        color: #18201b;
+        overflow: hidden;
+      }
+
+      .switcher button {
+        height: 42px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 1.05rem;
+        padding: 0;
+      }
+
+      .switcher button:hover {
+        background: #d9e3dc;
+      }
+
+      .switcher-label {
+        border-inline: 1px solid #c5d0c8;
+        padding: 0 16px;
+        font-size: 0.82rem;
+        font-weight: 750;
+        line-height: 42px;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      @media (max-width: 900px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .stage {
+          min-height: auto;
+        }
+
+        aside {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          column-gap: 18px;
+        }
+      }
+
+      @media (max-width: 620px) {
+        main {
+          width: min(100% - 18px, 1180px);
+          padding-top: 22px;
+        }
+
+        header {
+          align-items: start;
+          flex-direction: column-reverse;
+        }
+
+        .stage {
+          padding: 10px 5px;
+        }
+
+        .terminal {
+          font-size: 12px;
+        }
+
+        .transcript {
+          min-height: 430px;
+          padding-inline: 11px;
+        }
+
+        .editor {
+          padding-inline: 11px;
+        }
+
+        aside {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1>Working 信息条原型</h1>
+          <p>
+            已收敛到 Grok 九点方向：九点保持真实的 3×3 微型矩阵，按右上开始的螺旋路径逐点变亮并向中心收拢。
+            活动词固定为 Claude 观察词加精选英文；provider 未上报 usage 时只显示运行时间。
+          </p>
+        </div>
+        <span class="mark">THROWAWAY · ISSUE #29</span>
+      </header>
+
+      <div class="workspace">
+        <section class="stage" aria-label="Ghostty Working 信息条预览">
+          <div class="terminal" id="terminal">
+            <div class="windowbar">
+              <span class="lights"><i></i><i></i><i></i></span>
+              <span id="window-title"></span>
+            </div>
+            <div class="transcript">
+              <div class="line user">调查失败测试并给出最小修复</div>
+              <div class="blank"></div>
+              <div class="line">我先确认测试 seam 和最近的变更。</div>
+              <div class="line tool"><span class="tool-name">bash</span> pnpm test</div>
+              <div class="line tool"><span class="tool-name">read</span> packages/pi-ui-status/src/status-extension.ts</div>
+              <div class="line tool done">2 个失败 · 正在检查 reload cleanup</div>
+              <div class="blank"></div>
+              <div class="line">我会验证正常、取消和 error path。</div>
+              <div id="activity-slot"></div>
+            </div>
+            <div class="editor">
+              <div class="editor-line">输入消息，或按 Esc 取消当前工作</div>
+              <div class="footer">
+                <span>pi · claude-sonnet · thinking high</span>
+                <span>↑12k ↓1.8k · 42%</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside>
+          <section class="block">
+            <span class="label">当前 indicator</span>
+            <h2 class="variant-title" id="variant-title"></h2>
+            <p class="description" id="variant-description"></p>
+            <div class="indicator-zoom" id="indicator-zoom" aria-label="Indicator 放大预览"></div>
+          </section>
+
+          <section class="block">
+            <span class="label">真实状态</span>
+            <div class="buttons" id="state-controls"></div>
+          </section>
+
+          <section class="block">
+            <span class="label">颜色时间点</span>
+            <div class="buttons" id="elapsed-controls"></div>
+            <div class="thresholds" style="margin-top: 11px">
+              <div class="threshold normal"><strong>&lt; 01:00</strong>主题 accent</div>
+              <div class="threshold warning"><strong>01:00–02:59</strong>warning 黄</div>
+              <div class="threshold danger"><strong>≥ 03:00</strong>error 红</div>
+            </div>
+          </section>
+
+          <section class="block">
+            <span class="label">动效</span>
+            <div class="buttons" id="motion-controls"></div>
+          </section>
+
+          <section class="block">
+            <span class="label">活动词轮换</span>
+            <div class="buttons" id="cadence-controls"></div>
+          </section>
+
+          <section class="block">
+            <span class="label">活动词池</span>
+            <div class="buttons" id="word-pool-controls"></div>
+          </section>
+
+          <section class="block">
+            <span class="label">Provider output usage</span>
+            <div class="buttons" id="usage-controls"></div>
+            <p class="note" style="margin-top: 8px">
+              Provider 未上报时不占位；有精确 usage 后显示“数字↓”。Token 和时间共用一组括号。
+            </p>
+          </section>
+
+          <section class="block">
+            <span class="label">终端宽度</span>
+            <div class="buttons" id="width-controls"></div>
+          </section>
+
+          <section class="source-note">
+            <strong>终端表达：</strong>三个 grapheme 各自用中点、上组合点和下组合点承载一列，因此完整 3×3 indicator 只占三字符宽、一行高。
+            顺序是右上 → 上中 → 左上 → 左中 → 左下 → 下中 → 右下 → 右中 → 中心；使用公开的单行 <code>setWorkingMessage()</code>。
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <nav class="switcher" aria-label="Indicator 方案切换" hidden>
+      <button id="previous" aria-label="上一个 indicator">←</button>
+      <span class="switcher-label" id="switcher-label"></span>
+      <button id="next" aria-label="下一个 indicator">→</button>
+    </nav>
+
+    <script>
+      const variants = [
+        {
+          id: "grok-gather",
+          key: "D",
+          name: "Grok 九点收拢",
+          description: "一个真实的 3×3 九点 indicator；九点默认淡显，沿螺旋路径逐点变亮，最后在中心完成收拢。",
+          frames: [
+            "·········",
+            "·········",
+            "··•······",
+            "·••······",
+            "•••······",
+            "••••·····",
+            "••••··•··",
+            "••••··••·",
+            "••••··•••",
+            "••••·••••",
+            "•••••••••",
+            "•••••••••",
+            "•••••••••",
+          ],
+          interval: 125,
+          staticFrame: "·········",
+        },
+      ];
+
+      const wordPools = [
+        {
+          id: "claude-curated",
+          label: "Claude + 精选 · 28 词",
+          words: [
+            "Vibing",
+            "Honking",
+            "Cooking",
+            "Concocting",
+            "Moseying",
+            "Sussing",
+            "Finagling",
+            "Thinking",
+            "Working",
+            "Exploring",
+            "Inspecting",
+            "Tracing",
+            "Reasoning",
+            "Checking",
+            "Untangling",
+            "Connecting",
+            "Crafting",
+            "Refining",
+            "Polishing",
+            "Parsing",
+            "Mapping",
+            "Pondering",
+            "Analyzing",
+            "Organizing",
+            "Shaping",
+            "Navigating",
+            "Musing",
+            "Focusing",
+          ],
+        },
+      ];
+
+      const controls = {
+        activity: [
+          ["working", "Working"],
+          ["done", "Done"],
+          ["cancelled", "Cancelled"],
+          ["error", "Error"],
+        ],
+        elapsedPreset: [
+          [20, "00:20"],
+          [70, "01:10 黄"],
+          [190, "03:10 红"],
+          [0, "重新计时"],
+        ],
+        motion: [
+          ["full", "完整"],
+          ["reduced", "减弱"],
+          ["off", "关闭"],
+        ],
+        cadence: [
+          [4, "4 秒"],
+          [8, "8 秒"],
+          [15, "15 秒"],
+        ],
+        wordPool: wordPools.map((pool) => [pool.id, pool.label]),
+        usage: [
+          ["live", "已上报"],
+          ["unknown", "未上报（隐藏）"],
+        ],
+        width: [
+          [20, "20 列"],
+          [40, "40 列"],
+          [80, "80 列"],
+        ],
+      };
+
+      let state = {
+        variant:
+          new URLSearchParams(location.search).get("variant") ??
+          "grok-gather",
+        activity: "working",
+        elapsedPreset: 20,
+        motion: "full",
+        cadence: 8,
+        wordPool: "claude-curated",
+        usage: "live",
+        width: 80,
+        spinnerFrame: 0,
+        startedAt: performance.now(),
+      };
+      if (!variants.some((variant) => variant.id === state.variant)) {
+        state.variant = "grok-gather";
+      }
+
+      let spinnerTimer;
+      let metricsTimer;
+      const terminal = document.querySelector("#terminal");
+      const activitySlot = document.querySelector("#activity-slot");
+      const variantTitle = document.querySelector("#variant-title");
+      const variantDescription = document.querySelector("#variant-description");
+      const indicatorZoom = document.querySelector("#indicator-zoom");
+      const switcherLabel = document.querySelector("#switcher-label");
+      const windowTitle = document.querySelector("#window-title");
+
+      const selectedVariant = () =>
+        variants.find((variant) => variant.id === state.variant);
+
+      const selectedWordPool = () =>
+        wordPools.find((pool) => pool.id === state.wordPool);
+
+      const elapsedSeconds = () =>
+        state.elapsedPreset + Math.floor((performance.now() - state.startedAt) / 1000);
+
+      const formatElapsed = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainder = seconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+      };
+
+      const toneForElapsed = (seconds) => {
+        if (seconds >= 180) return "danger";
+        if (seconds >= 60) return "warning";
+        return "normal";
+      };
+
+      const wordForElapsed = (seconds) => {
+        const words = selectedWordPool().words;
+        if (state.motion === "off" || words.length === 1) return words[0];
+        const cadence = state.motion === "reduced" ? state.cadence * 2 : state.cadence;
+        return words[Math.floor(seconds / cadence) % words.length];
+      };
+
+      const outputForElapsed = (seconds) => {
+        if (state.usage === "unknown") return undefined;
+        const simulatedProviderUsage = 192 + Math.floor(seconds * 11.4);
+        return `${simulatedProviderUsage.toLocaleString("en-US")}↓`;
+      };
+
+      const indicatorMarkup = (frame) =>
+        `<span class="indicator-dots">${[...frame]
+          .map(
+            (dot) =>
+              `<span class="${dot === "•" ? "dot-bright" : "dot-dim"}">${dot}</span>`
+          )
+          .join("")}</span>`;
+
+      const renderActivity = () => {
+        if (state.activity !== "working") {
+          const outcomes = {
+            done: ["done", "✓", "Done"],
+            cancelled: ["cancelled", "×", "Cancelled"],
+            error: ["error", "!", "Error"],
+          };
+          const [className, mark, label] = outcomes[state.activity];
+          indicatorZoom.className = `indicator-zoom ${className}`;
+          indicatorZoom.textContent = mark;
+          activitySlot.innerHTML = `
+            <div class="outcome ${className}">
+              <span class="outcome-mark">${mark}</span>
+              <span class="outcome-label">${label}</span>
+            </div>`;
+          return;
+        }
+
+        const elapsed = elapsedSeconds();
+        const tone = toneForElapsed(elapsed);
+        const variant = selectedVariant();
+        const frame =
+          state.motion === "full"
+            ? variant.frames[state.spinnerFrame % variant.frames.length]
+            : variant.staticFrame;
+        indicatorZoom.className = `indicator-zoom tone-${tone}`;
+        indicatorZoom.innerHTML = indicatorMarkup(frame);
+        const output = outputForElapsed(elapsed);
+        const metrics = output
+          ? `${output} <span class="elapsed">${formatElapsed(elapsed)}</span>`
+          : `<span class="elapsed">${formatElapsed(elapsed)}</span>`;
+        activitySlot.innerHTML = `
+          <div class="activity tone-${tone}">
+            <span class="spinner">${indicatorMarkup(frame)}</span>
+            <span class="activity-copy">
+              <span class="verb">${wordForElapsed(elapsed)}</span>
+              <span class="metadata">(${metrics})</span>
+            </span>
+          </div>`;
+      };
+
+      const renderButtons = (selector, entries, selected, field) => {
+        document.querySelector(selector).innerHTML = entries
+          .map(
+            ([value, label]) =>
+              `<button class="${String(value) === String(selected) ? "active" : ""}" data-field="${field}" data-value="${value}">${label}</button>`
+          )
+          .join("");
+      };
+
+      const restartTimers = () => {
+        clearInterval(spinnerTimer);
+        clearInterval(metricsTimer);
+        state.spinnerFrame = 0;
+        const variant = selectedVariant();
+        if (state.activity === "working" && state.motion === "full") {
+          spinnerTimer = setInterval(() => {
+            state.spinnerFrame =
+              (state.spinnerFrame + 1) % variant.frames.length;
+            renderActivity();
+          }, variant.interval);
+        }
+        if (state.activity === "working") {
+          metricsTimer = setInterval(renderActivity, 1000);
+        }
+        renderActivity();
+      };
+
+      const render = () => {
+        const variant = selectedVariant();
+        document.documentElement.style.setProperty(
+          "--terminal-width",
+          `${state.width}ch`
+        );
+        terminal.classList.toggle("width-20", state.width === 20);
+        windowTitle.textContent = `${state.width} 列 · Ghostty · truecolor`;
+        variantTitle.textContent = `${variant.key} — ${variant.name}`;
+        variantDescription.textContent = variant.description;
+        switcherLabel.textContent = `${variant.key} — ${variant.name}`;
+        renderButtons("#state-controls", controls.activity, state.activity, "activity");
+        renderButtons(
+          "#elapsed-controls",
+          controls.elapsedPreset,
+          state.elapsedPreset,
+          "elapsedPreset"
+        );
+        renderButtons("#motion-controls", controls.motion, state.motion, "motion");
+        renderButtons("#cadence-controls", controls.cadence, state.cadence, "cadence");
+        renderButtons(
+          "#word-pool-controls",
+          controls.wordPool,
+          state.wordPool,
+          "wordPool"
+        );
+        renderButtons("#usage-controls", controls.usage, state.usage, "usage");
+        renderButtons("#width-controls", controls.width, state.width, "width");
+        restartTimers();
+      };
+
+      const selectVariant = (index) => {
+        const normalized = (index + variants.length) % variants.length;
+        state.variant = variants[normalized].id;
+        state.startedAt = performance.now();
+        const url = new URL(location.href);
+        url.searchParams.set("variant", state.variant);
+        history.replaceState({}, "", url);
+        render();
+      };
+
+      document.addEventListener("click", (event) => {
+        const control = event.target.closest("[data-field]");
+        if (!control) return;
+        const field = control.dataset.field;
+        const numeric = ["elapsedPreset", "cadence", "width"].includes(field);
+        state[field] = numeric ? Number(control.dataset.value) : control.dataset.value;
+        if (field === "elapsedPreset" || field === "activity") {
+          state.startedAt = performance.now();
+        }
+        render();
+      });
+
+      document.querySelector("#previous").addEventListener("click", () => {
+        const current = variants.findIndex((variant) => variant.id === state.variant);
+        selectVariant(current - 1);
+      });
+      document.querySelector("#next").addEventListener("click", () => {
+        const current = variants.findIndex((variant) => variant.id === state.variant);
+        selectVariant(current + 1);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        const target = event.target;
+        if (target.matches("input, textarea, [contenteditable=true]")) return;
+        const current = variants.findIndex((variant) => variant.id === state.variant);
+        if (event.key === "ArrowLeft") selectVariant(current - 1);
+        if (event.key === "ArrowRight") selectVariant(current + 1);
+      });
+
+      render();
+    </script>
+  </body>
+</html>

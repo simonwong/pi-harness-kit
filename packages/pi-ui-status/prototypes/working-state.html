@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>原型 — Pi UI Working 状态</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f5f2;
+        --surface: #ffffff;
+        --surface-alt: #eef0eb;
+        --ink: #1c211d;
+        --muted: #667067;
+        --line: #d8ddd7;
+        --accent: #496b58;
+        --accent-soft: #e0ebe4;
+        --danger: #9c3c35;
+        --warning: #876719;
+        --terminal: #151a17;
+        --terminal-ink: #dce5dd;
+        --terminal-muted: #8d9a90;
+        --terminal-accent: #8bc6a1;
+        --radius: 14px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      button,
+      select {
+        font: inherit;
+      }
+
+      button {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--surface);
+        color: var(--ink);
+        cursor: pointer;
+        padding: 0.6rem 0.8rem;
+      }
+
+      button:hover {
+        border-color: var(--accent);
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid color-mix(in srgb, var(--accent) 28%, transparent);
+        outline-offset: 2px;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: white;
+      }
+
+      button.danger {
+        color: var(--danger);
+      }
+
+      button[disabled] {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 42px 0 72px;
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font-size: 0.75rem;
+        font-weight: 750;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin-bottom: 12px;
+        font-size: clamp(2rem, 5vw, 3.8rem);
+        letter-spacing: -0.045em;
+        line-height: 1.02;
+      }
+
+      h2 {
+        margin-bottom: 16px;
+        font-size: 1.15rem;
+      }
+
+      h3 {
+        margin-bottom: 6px;
+        font-size: 0.98rem;
+      }
+
+      .intro {
+        max-width: 820px;
+        margin-bottom: 30px;
+        color: var(--muted);
+        font-size: 1.02rem;
+      }
+
+      .notice {
+        border-left: 3px solid var(--warning);
+        margin-bottom: 24px;
+        padding: 10px 14px;
+        background: #f5edd7;
+        color: #604c17;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .stack {
+        display: grid;
+        gap: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        padding: 20px;
+      }
+
+      .panel > :last-child {
+        margin-bottom: 0;
+      }
+
+      .variant-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .variant {
+        position: relative;
+        display: block;
+        min-height: 176px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        cursor: pointer;
+      }
+
+      .variant:has(input:checked) {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+
+      .variant input {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+      }
+
+      .variant p {
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .tag {
+        display: inline-block;
+        border-radius: 999px;
+        margin-bottom: 12px;
+        padding: 3px 8px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .terminal-shell {
+        display: grid;
+        place-items: start center;
+        min-height: 224px;
+        border-radius: 12px;
+        background: var(--terminal);
+        padding: 28px 18px;
+        overflow: hidden;
+      }
+
+      .terminal {
+        width: min(100%, calc(var(--terminal-columns) * 0.62rem));
+        min-height: 164px;
+        border: 1px solid #2d3730;
+        border-radius: 7px;
+        background: #111512;
+        color: var(--terminal-ink);
+        font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        font-size: 0.87rem;
+        overflow: hidden;
+      }
+
+      .terminal-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1px solid #2d3730;
+        padding: 7px 10px;
+        color: var(--terminal-muted);
+        font-size: 0.72rem;
+      }
+
+      .terminal-header i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #49524b;
+      }
+
+      .terminal-body {
+        padding: 14px 12px;
+      }
+
+      .prompt,
+      .native-evidence,
+      .working-row,
+      .terminal-cue {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .prompt {
+        margin-bottom: 12px;
+      }
+
+      .prompt::before {
+        content: "> ";
+        color: var(--terminal-accent);
+      }
+
+      .working-row {
+        min-height: 1.5em;
+        color: var(--terminal-ink);
+      }
+
+      .indicator {
+        display: inline-block;
+        width: 1.5em;
+        color: var(--terminal-accent);
+      }
+
+      .row-cleared {
+        color: var(--terminal-muted);
+      }
+
+      .native-evidence {
+        margin-top: 12px;
+        color: var(--terminal-muted);
+      }
+
+      .terminal-cue {
+        margin-top: 10px;
+        color: var(--terminal-accent);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .control-group + .control-group {
+        margin-top: 16px;
+      }
+
+      .control-label {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .segmented {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 4px;
+        background: var(--surface-alt);
+      }
+
+      .segmented button {
+        border: 0;
+        padding: 0.42rem 0.65rem;
+        background: transparent;
+      }
+
+      .segmented button.active {
+        background: var(--surface);
+        box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .state-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--line);
+        overflow: hidden;
+      }
+
+      .state-item {
+        min-width: 0;
+        background: var(--surface);
+        padding: 11px 12px;
+      }
+
+      .state-item dt {
+        color: var(--muted);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .state-item dd {
+        margin: 3px 0 0;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.86rem;
+        overflow-wrap: anywhere;
+      }
+
+      .change-note {
+        min-height: 3.2em;
+        margin: 12px 0 0;
+        border-radius: 8px;
+        padding: 9px 11px;
+        background: var(--surface-alt);
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 4px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--line);
+        margin: -4px 0 16px;
+      }
+
+      .tab {
+        border: 0;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        padding: 9px 10px;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .tab.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        font-weight: 700;
+      }
+
+      .walkthrough-copy {
+        min-height: 4.5em;
+        color: var(--muted);
+      }
+
+      .step-list {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 28px 1fr auto;
+        gap: 9px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        padding: 9px;
+      }
+
+      .step-index {
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--surface-alt);
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      .step.done {
+        opacity: 0.58;
+      }
+
+      .step.current {
+        border-color: var(--accent);
+      }
+
+      .step.current .step-index {
+        background: var(--accent);
+        color: white;
+      }
+
+      .step small {
+        display: block;
+        color: var(--muted);
+      }
+
+      .decision-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+      }
+
+      .decision-table th,
+      .decision-table td {
+        border-bottom: 1px solid var(--line);
+        padding: 9px 7px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .decision-table th {
+        color: var(--muted);
+        font-size: 0.72rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .recommendation {
+        margin-top: 14px;
+        border-radius: 10px;
+        padding: 12px 14px;
+        background: var(--accent-soft);
+        color: #284334;
+      }
+
+      @media (max-width: 860px) {
+        .grid,
+        .variant-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .variant {
+          min-height: auto;
+        }
+      }
+
+      @media (max-width: 520px) {
+        main {
+          width: min(100% - 20px, 1180px);
+          padding-top: 24px;
+        }
+
+        .panel {
+          padding: 15px;
+        }
+
+        .state-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .step {
+          grid-template-columns: 28px 1fr;
+        }
+
+        .step button {
+          grid-column: 2;
+          justify-self: start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">一次性逻辑原型 · Issue #29</p>
+      <h1>Pi 什么时候才算真的完成工作？</h1>
+      <p class="intro">
+        这个原型用来验证：一次底层运行结束、自动重试、排队继续、最终结束、取消、错误和
+        reload 之间，Working 状态怎样才能始终真实且安静。你可以亲自驱动生命周期、比较三种
+        呈现方案，并在每次操作后查看完整状态。
+      </p>
+      <p class="notice">
+        <strong>公共 API 限制：</strong>每次底层 <code>agent_end</code> 发生时，
+        Pi host 都会清除 Working row；只有 <code>agent_settled</code>
+        才能证明不会再自动继续。这个原型会把这段空隙明确展示出来，而不是藏起来。
+      </p>
+
+      <section class="panel" aria-labelledby="variants-title">
+        <h2 id="variants-title">选择一种呈现策略</h2>
+        <div class="variant-grid" id="variant-grid"></div>
+      </section>
+
+      <div class="grid" style="margin-top: 18px">
+        <div class="stack">
+          <section class="panel" aria-labelledby="preview-title">
+            <h2 id="preview-title">Host 实际效果预览</h2>
+            <div class="terminal-shell">
+              <div class="terminal" id="terminal">
+                <div class="terminal-header">
+                  <i></i><i></i><i></i>
+                  <span id="terminal-width-label"></span>
+                </div>
+                <div class="terminal-body">
+                  <div class="prompt" id="prompt-copy"></div>
+                  <div class="working-row" id="working-row"></div>
+                  <div class="native-evidence" id="native-evidence"></div>
+                  <div class="terminal-cue" id="terminal-cue"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">动效偏好</span>
+              <div class="segmented" id="motion-controls"></div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">终端宽度</span>
+              <div class="segmented" id="width-controls"></div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">文案压力测试</span>
+              <div class="segmented" id="language-controls"></div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="free-play-title">
+            <h2 id="free-play-title">自由操作</h2>
+            <div class="control-group">
+              <span class="control-label">会话</span>
+              <div class="controls">
+                <button data-action="SESSION_START">启动会话</button>
+                <button data-action="RELOAD">Reload / 替换 generation</button>
+                <button data-action="SESSION_SHUTDOWN">关闭会话</button>
+                <button data-action="STALE_CALLBACK">触发旧 generation 回调</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Agent 生命周期</span>
+              <div class="controls">
+                <button class="primary" data-action="AGENT_START">Agent 开始工作</button>
+                <button data-action="AGENT_END" data-outcome="normal">本轮正常结束</button>
+                <button class="danger" data-action="AGENT_END" data-outcome="error">本轮发生错误</button>
+                <button class="danger" data-action="AGENT_END" data-outcome="aborted">本轮被取消</button>
+                <button data-action="AGENT_SETTLED">Agent 最终结束</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="walkthrough-title">
+            <h2 id="walkthrough-title">引导场景</h2>
+            <div class="tabs" id="scenario-tabs" role="tablist"></div>
+            <p class="walkthrough-copy" id="scenario-copy"></p>
+            <ol class="step-list" id="scenario-steps"></ol>
+          </section>
+        </div>
+
+        <aside class="stack">
+          <section class="panel" aria-labelledby="state-title">
+            <h2 id="state-title">完整模型状态</h2>
+            <dl class="state-grid" id="state-grid"></dl>
+            <p class="change-note" id="change-note"></p>
+          </section>
+
+          <section class="panel" aria-labelledby="decision-title">
+            <h2 id="decision-title">每个方案意味着什么</h2>
+            <table class="decision-table">
+              <thead>
+                <tr>
+                  <th>方案</th>
+                  <th>工作中</th>
+                  <th>最终结束后</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>原生极简</td>
+                  <td>Pi spinner + “Working…”</td>
+                  <td>只保留原生证据</td>
+                </tr>
+                <tr>
+                  <td>克制脉冲</td>
+                  <td>160ms 语义脉冲 + “Working”</td>
+                  <td>只保留原生证据</td>
+                </tr>
+                <tr>
+                  <td>明确结果</td>
+                  <td>静态语义点 + “In progress”</td>
+                  <td>1.2 秒 keyed status；扩大 #19 seam</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="recommendation">
+              <strong>建议：</strong>选择“克制脉冲”，结束后只保留原生证据。
+              它让 Pi UI 在工作中有清晰但安静的辨识度，同时不虚构第二套成功/错误提示面。
+            </p>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      // 可移植的纯模型：不依赖 DOM、timer 或 ambient state。
+      const WorkingModel = (() => {
+        const initialState = () => ({
+          generation: 0,
+          session: "not started",
+          phase: "native",
+          activeRun: 0,
+          pendingOutcome: "none",
+          settledOutcome: "none",
+          hostWorkingRow: "hidden",
+          terminalCue: "none",
+          ignoredCallbacks: 0,
+          lastChange: "请先启动会话。",
+          variant: "quiet",
+          motion: "full",
+          width: 40,
+          cjk: false,
+        });
+
+        const settleLabel = (outcome) => {
+          if (outcome === "error") return "失败";
+          if (outcome === "aborted") return "已停止";
+          return "完成";
+        };
+
+        const variantLabel = (variant) =>
+          ({ explicit: "明确结果", native: "原生极简", quiet: "克制脉冲" })[
+            variant
+          ] ?? variant;
+
+        const motionLabel = (motion) =>
+          ({ full: "完整", off: "关闭", reduced: "减弱" })[motion] ?? motion;
+
+        const reduce = (state, action) => {
+          const next = { ...state, terminalCue: "none" };
+
+          switch (action.type) {
+            case "SESSION_START":
+              return {
+                ...next,
+                generation: state.generation + 1,
+                session: "ready",
+                phase: "idle",
+                activeRun: 0,
+                pendingOutcome: "none",
+                settledOutcome: "none",
+                hostWorkingRow: "hidden",
+                lastChange: "会话已就绪。Working 呈现已配置，但空闲时不会显示 Working row。",
+              };
+            case "RELOAD":
+              return {
+                ...next,
+                generation: state.generation + 1,
+                session: "ready",
+                phase: "idle",
+                activeRun: 0,
+                pendingOutcome: "none",
+                settledOutcome: "none",
+                hostWorkingRow: "hidden",
+                lastChange: "旧 generation 已清理并恢复原生默认值；新 generation 随后进入就绪状态。",
+              };
+            case "SESSION_SHUTDOWN":
+              return {
+                ...next,
+                session: "disposed",
+                phase: "native",
+                activeRun: 0,
+                pendingOutcome: "none",
+                settledOutcome: "none",
+                hostWorkingRow: "hidden",
+                lastChange: "关闭操作可重复执行：恢复原生文案、可见性和 indicator，并清空会话状态。",
+              };
+            case "AGENT_START":
+              if (state.session !== "ready") {
+                return {
+                  ...next,
+                  lastChange: "没有可用的 TUI 会话拥有 Working row，因此忽略这次 agent start。",
+                };
+              }
+              return {
+                ...next,
+                phase: "active",
+                activeRun: state.activeRun + 1,
+                pendingOutcome: "none",
+                settledOutcome: "none",
+                hostWorkingRow: "visible",
+                lastChange:
+                  state.phase === "awaiting settle"
+                    ? "最终结束前又开始了自动继续；没有显示错误的结束结果，Working 再次进入 active。"
+                    : "Agent run 已开始，host 正在显示配置后的 Working row。",
+              };
+            case "AGENT_END":
+              if (state.phase !== "active") {
+                return {
+                  ...next,
+                  lastChange: "当前没有 active run，因此忽略这次底层结束事件。",
+                };
+              }
+              return {
+                ...next,
+                phase: "awaiting settle",
+                pendingOutcome: action.outcome,
+                hostWorkingRow: "cleared by host",
+                lastChange: `底层 run 以“${settleLabel(action.outcome)}”结束，但这还不是最终结果：retry、compaction 或 follow-up 仍可能开始。`,
+              };
+            case "AGENT_SETTLED":
+              if (state.phase !== "awaiting settle") {
+                return {
+                  ...next,
+                  lastChange: "没有等待确认的底层结果，因此忽略这次 agent_settled。",
+                };
+              }
+              return {
+                ...next,
+                phase: "settled",
+                settledOutcome: state.pendingOutcome,
+                pendingOutcome: "none",
+                hostWorkingRow: "hidden",
+                terminalCue:
+                  state.variant === "explicit"
+                    ? settleLabel(state.pendingOutcome)
+                    : "none",
+                lastChange:
+                  state.variant === "explicit"
+                    ? "Agent 已最终结束。“明确结果”方案会在 Working row 外新增 1.2 秒 keyed status。"
+                    : "Agent 已最终结束。Working 保持消失，结果继续由原生 Transcript 证据表达。",
+              };
+            case "STALE_CALLBACK":
+              return {
+                ...next,
+                ignoredCallbacks: state.ignoredCallbacks + 1,
+                lastChange: "旧 generation 的回调已被忽略，没有产生任何 UI write。",
+              };
+            case "TERMINAL_CUE_EXPIRED":
+              return {
+                ...next,
+                terminalCue: "none",
+                lastChange: "装饰性结束提示已在 1.2 秒内自动消失。",
+              };
+            case "SET_VARIANT":
+              return {
+                ...next,
+                variant: action.variant,
+                terminalCue: "none",
+                lastChange: `呈现策略已切换为“${variantLabel(action.variant)}”，生命周期事实没有改变。`,
+              };
+            case "SET_MOTION":
+              return {
+                ...next,
+                motion: action.motion,
+                lastChange: `动效偏好已切换为“${motionLabel(action.motion)}”，状态含义没有改变。`,
+              };
+            case "SET_WIDTH":
+              return {
+                ...next,
+                width: action.width,
+                lastChange: `预览宽度已切换为 ${action.width} 列。`,
+              };
+            case "SET_CJK":
+              return {
+                ...next,
+                cjk: action.cjk,
+                lastChange: action.cjk
+                  ? "已启用中文宽字符压力文案。"
+                  : "已恢复英文候选文案。",
+              };
+            default:
+              return { ...next, lastChange: "已忽略未知操作。" };
+          }
+        };
+
+        const present = (state) => {
+          const variants = {
+            native: {
+              message: state.cjk ? "处理中…" : "Working…",
+              fullFrames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
+              interval: 100,
+              terminalPolicy: "native only",
+              owner: "Pi host",
+            },
+            quiet: {
+              message: state.cjk ? "处理中" : "Working",
+              fullFrames: ["·", "•", "●", "•"],
+              interval: 160,
+              terminalPolicy: "native only",
+              owner: "Pi host",
+            },
+            explicit: {
+              message: state.cjk ? "正在处理" : "In progress",
+              fullFrames: ["●"],
+              interval: null,
+              terminalPolicy: "1.2s keyed status",
+              owner: "static",
+            },
+          };
+          const selected = variants[state.variant];
+          const frames =
+            state.motion === "full"
+              ? selected.fullFrames
+              : state.motion === "reduced"
+                ? [selected.fullFrames.at(-1) ?? "•"]
+                : ["•"];
+
+          return {
+            message: selected.message,
+            frames,
+            interval: frames.length > 1 ? selected.interval : null,
+            animationOwner: frames.length > 1 ? selected.owner : "none",
+            piUiRepeatingTimers: 0,
+            piUiOneShotTimers: state.terminalCue === "none" ? 0 : 1,
+            hostAnimation: state.phase === "active" && frames.length > 1,
+            terminalPolicy: selected.terminalPolicy,
+            terminalCue: state.terminalCue,
+          };
+        };
+
+        return { initialState, present, reduce };
+      })();
+
+      const variants = [
+        {
+          id: "native",
+          name: "原生极简",
+          tag: "维护成本最低",
+          summary: "保留 Pi 默认 spinner 和熟悉文案，只新增可靠的 lifecycle cleanup。",
+          caveat: "辨识度最低；full motion 的刷新节奏完全由 host 决定。",
+        },
+        {
+          id: "quiet",
+          name: "克制脉冲",
+          tag: "推荐",
+          summary: "160ms 四帧语义脉冲，搭配更短、更稳定的文案。",
+          caveat: "full 模式仍有动画；reduced/off 会退化为静态点。",
+        },
+        {
+          id: "explicit",
+          name: "明确结果",
+          tag: "扩大范围",
+          summary: "工作中使用静态点，最终结束后额外显示 1.2 秒完成/停止/失败状态。",
+          caveat: "会新增第二个状态面，并与后续 Status Cues Capability 重叠。",
+        },
+      ];
+
+      const scenarios = [
+        {
+          id: "complete",
+          name: "正常完成",
+          copy: "观察 host 在底层 run 结束时清除 Working row。只有 agent_settled 才让结果最终成立；只保留原生证据的方案不会重新制造 loader。",
+          steps: [
+            ["SESSION_START", "启动会话", "配置 Working 呈现，但空闲时不显示 row。"],
+            ["AGENT_START", "开始工作", "Host 显示 Working row。"],
+            ["AGENT_END", "本轮正常结束", "Host 清除 row，但仍可能自动继续。", "normal"],
+            ["AGENT_SETTLED", "最终结束", "现在正常完成才成为最终结果。"],
+          ],
+        },
+        {
+          id: "retry",
+          name: "重试 / 自动继续",
+          copy: "一次底层 run 失败，不等于用户请求最终失败。请在 settle 前开始下一次 run，确认不会闪现错误的结束提示。",
+          steps: [
+            ["SESSION_START", "启动会话", "从一个已知 generation 开始。"],
+            ["AGENT_START", "开始第一次 run", "Working 出现。"],
+            ["AGENT_END", "第一次 run 出错", "Row 被清除；错误仍是 pending，并非最终结果。", "error"],
+            ["AGENT_START", "自动重试开始", "Pending outcome 被丢弃，Working 再次出现。"],
+            ["AGENT_END", "重试成功结束", "第二次 run 正常结束。", "normal"],
+            ["AGENT_SETTLED", "最终结束", "直到这里，整个请求才真正完成。"],
+          ],
+        },
+        {
+          id: "cancel",
+          name: "取消",
+          copy: "取消绝不能被显示成成功。Working row 停止，原生 cancelled 证据继续作为结果依据。",
+          steps: [
+            ["SESSION_START", "启动会话", "从空闲状态开始。"],
+            ["AGENT_START", "开始工作", "Working 出现。"],
+            ["AGENT_END", "取消本轮", "Host 清除 Working，并记录 aborted outcome。", "aborted"],
+            ["AGENT_SETTLED", "最终结束", "最终结果仍是“已停止”，绝不是“完成”。"],
+          ],
+        },
+        {
+          id: "error",
+          name: "最终错误",
+          copy: "错误只有在 settle 后才成为最终结果。可以比较“只保留原生证据”和“额外 keyed status”两种策略。",
+          steps: [
+            ["SESSION_START", "启动会话", "从空闲状态开始。"],
+            ["AGENT_START", "开始工作", "Working 出现。"],
+            ["AGENT_END", "本轮发生错误", "仍可能自动继续，所以错误先保持 pending。", "error"],
+            ["AGENT_SETTLED", "最终结束", "现在失败才成为最终结果。"],
+          ],
+        },
+        {
+          id: "reload",
+          name: "Reload 安全",
+          copy: "替换 extension generation 时先恢复原生默认值。旧 generation 的回调不能再修改新会话。",
+          steps: [
+            ["SESSION_START", "启动会话", "Generation 1 已就绪。"],
+            ["AGENT_START", "开始工作", "Generation 1 显示 Working。"],
+            ["RELOAD", "Reload extension", "Generation 1 已清理；Generation 2 为空闲。"],
+            ["STALE_CALLBACK", "触发旧回调", "回调会被计数，但不会产生 UI 变化。"],
+          ],
+        },
+      ];
+
+      let state = WorkingModel.initialState();
+      let currentScenario = scenarios[0];
+      let currentStep = 0;
+      let frameIndex = 0;
+      let frameTimer;
+      let cueTimer;
+
+      const variantGrid = document.querySelector("#variant-grid");
+      const motionControls = document.querySelector("#motion-controls");
+      const widthControls = document.querySelector("#width-controls");
+      const languageControls = document.querySelector("#language-controls");
+      const scenarioTabs = document.querySelector("#scenario-tabs");
+      const scenarioCopy = document.querySelector("#scenario-copy");
+      const scenarioSteps = document.querySelector("#scenario-steps");
+      const stateGrid = document.querySelector("#state-grid");
+      const changeNote = document.querySelector("#change-note");
+      const workingRow = document.querySelector("#working-row");
+      const nativeEvidence = document.querySelector("#native-evidence");
+      const terminalCue = document.querySelector("#terminal-cue");
+      const terminal = document.querySelector("#terminal");
+      const terminalWidthLabel = document.querySelector("#terminal-width-label");
+      const promptCopy = document.querySelector("#prompt-copy");
+
+      const dispatch = (action) => {
+        state = WorkingModel.reduce(state, action);
+        frameIndex = 0;
+        scheduleCueExpiry();
+        render();
+      };
+
+      const scheduleCueExpiry = () => {
+        clearTimeout(cueTimer);
+        if (state.terminalCue !== "none") {
+          cueTimer = setTimeout(() => {
+            dispatch({ type: "TERMINAL_CUE_EXPIRED" });
+          }, 1200);
+        }
+      };
+
+      const restartFrameTimer = (presentation) => {
+        clearInterval(frameTimer);
+        if (!presentation.hostAnimation || !presentation.interval) return;
+        frameTimer = setInterval(() => {
+          frameIndex = (frameIndex + 1) % presentation.frames.length;
+          renderWorkingRow(WorkingModel.present(state));
+        }, presentation.interval);
+      };
+
+      const renderVariants = () => {
+        variantGrid.innerHTML = variants
+          .map(
+            (variant) => `
+              <label class="variant">
+                <input type="radio" name="variant" value="${variant.id}" ${state.variant === variant.id ? "checked" : ""} />
+                <span class="tag">${variant.tag}</span>
+                <h3>${variant.name}</h3>
+                <p>${variant.summary}</p>
+                <p><strong>取舍：</strong> ${variant.caveat}</p>
+              </label>
+            `
+          )
+          .join("");
+      };
+
+      const renderSegment = (element, options, selected, actionType, key) => {
+        element.innerHTML = options
+          .map(
+            (option) => `
+              <button class="${String(option.value) === String(selected) ? "active" : ""}" data-segment-action="${actionType}" data-segment-value="${option.value}">
+                ${option.label}
+              </button>
+            `
+          )
+          .join("");
+        element.dataset.valueKey = key;
+      };
+
+      const renderWorkingRow = (presentation) => {
+        if (state.phase === "active") {
+          const frame = presentation.frames[frameIndex % presentation.frames.length] ?? "";
+          workingRow.className = "working-row";
+          workingRow.innerHTML = `<span class="indicator">${frame}</span>${presentation.message}`;
+          return;
+        }
+        workingRow.className = "working-row row-cleared";
+        workingRow.textContent =
+          state.hostWorkingRow === "cleared by host"
+            ? "[agent_end 时，host 已清除 Working row]"
+            : "[空闲时不显示 Working row]";
+      };
+
+      const renderTerminal = (presentation) => {
+        terminal.style.setProperty("--terminal-columns", state.width);
+        terminalWidthLabel.textContent = `${state.width} 列 · Ghostty 风格预览`;
+        promptCopy.textContent = state.cjk
+          ? "请检查这个复杂的长会话"
+          : "Review this long coding session";
+        renderWorkingRow(presentation);
+
+        if (state.phase === "awaiting settle") {
+          nativeEvidence.textContent = `原生证据：底层结果为${outcomeLabel(state.pendingOutcome)}；仍可能自动继续。`;
+        } else if (state.phase === "settled") {
+          nativeEvidence.textContent = `原生证据：最终结果为${outcomeLabel(state.settledOutcome)}，证据保留在 Transcript。`;
+        } else {
+          nativeEvidence.textContent = "原生证据：目前还没有最终结果。";
+        }
+
+        terminalCue.textContent =
+          presentation.terminalCue === "none"
+            ? ""
+            : `pi-ui:status:working · ${presentation.terminalCue}`;
+      };
+
+      const outcomeLabel = (outcome) =>
+        ({
+          aborted: "已取消",
+          error: "错误",
+          none: "无",
+          normal: "正常完成",
+        })[outcome] ?? outcome;
+
+      const humanValue = (value) =>
+        ({
+          "1.2s keyed status": "1.2 秒 keyed status",
+          "awaiting settle": "等待 agent_settled",
+          "cleared by host": "已由 host 清除",
+          "native only": "只保留原生证据",
+          "not started": "未启动",
+          aborted: "已取消",
+          active: "工作中",
+          disposed: "已清理",
+          error: "错误",
+          full: "完整",
+          hidden: "隐藏",
+          idle: "空闲",
+          native: "原生",
+          none: "无",
+          normal: "正常完成",
+          off: "关闭",
+          ready: "已就绪",
+          reduced: "减弱",
+          settled: "最终结束",
+          static: "静态",
+          visible: "显示中",
+        })[value] ?? value;
+
+      const renderState = (presentation) => {
+        const fields = [
+          ["Generation", state.generation],
+          ["会话", state.session],
+          ["阶段", state.phase],
+          ["Run 次数", state.activeRun],
+          ["等待确认的结果", state.pendingOutcome],
+          ["最终结果", state.settledOutcome],
+          ["Host Working row", state.hostWorkingRow],
+          ["结束反馈策略", presentation.terminalPolicy],
+          ["动效", state.motion],
+          ["动画负责方", presentation.animationOwner],
+          ["Pi UI 循环 timers", presentation.piUiRepeatingTimers],
+          ["Pi UI 单次 timers", presentation.piUiOneShotTimers],
+          ["已忽略的旧回调", state.ignoredCallbacks],
+        ];
+        stateGrid.innerHTML = fields
+          .map(
+            ([label, value]) => `
+              <div class="state-item">
+                <dt>${label}</dt>
+                <dd>${humanValue(value)}</dd>
+              </div>
+            `
+          )
+          .join("");
+        changeNote.textContent = state.lastChange;
+      };
+
+      const renderScenarios = () => {
+        scenarioTabs.innerHTML = scenarios
+          .map(
+            (scenario) => `
+              <button class="tab ${scenario.id === currentScenario.id ? "active" : ""}" data-scenario="${scenario.id}" role="tab">
+                ${scenario.name}
+              </button>
+            `
+          )
+          .join("");
+        scenarioCopy.textContent = currentScenario.copy;
+        scenarioSteps.innerHTML = currentScenario.steps
+          .map(([type, label, note, outcome], index) => {
+            const status = index < currentStep ? "done" : index === currentStep ? "current" : "";
+            return `
+              <li class="step ${status}">
+                <span class="step-index">${index + 1}</span>
+                <span><strong>${label}</strong><small>${note}</small></span>
+                <button ${index !== currentStep ? "disabled" : ""} data-step-action="${type}" data-step-outcome="${outcome ?? ""}">
+                  执行这一步
+                </button>
+              </li>
+            `;
+          })
+          .join("");
+      };
+
+      const render = () => {
+        const presentation = WorkingModel.present(state);
+        renderVariants();
+        renderSegment(
+          motionControls,
+          [
+            { value: "full", label: "完整" },
+            { value: "reduced", label: "减弱" },
+            { value: "off", label: "关闭" },
+          ],
+          state.motion,
+          "SET_MOTION",
+          "motion"
+        );
+        renderSegment(
+          widthControls,
+          [
+            { value: 20, label: "20 列" },
+            { value: 40, label: "40 列" },
+            { value: 80, label: "80 列" },
+          ],
+          state.width,
+          "SET_WIDTH",
+          "width"
+        );
+        renderSegment(
+          languageControls,
+          [
+            { value: "false", label: "英文候选" },
+            { value: "true", label: "中文宽字符" },
+          ],
+          String(state.cjk),
+          "SET_CJK",
+          "cjk"
+        );
+        renderTerminal(presentation);
+        renderState(presentation);
+        renderScenarios();
+        restartFrameTimer(presentation);
+      };
+
+      document.addEventListener("click", (event) => {
+        const actionButton = event.target.closest("[data-action]");
+        if (actionButton) {
+          dispatch({
+            type: actionButton.dataset.action,
+            outcome: actionButton.dataset.outcome,
+          });
+          return;
+        }
+
+        const segmentButton = event.target.closest("[data-segment-action]");
+        if (segmentButton) {
+          const type = segmentButton.dataset.segmentAction;
+          const rawValue = segmentButton.dataset.segmentValue;
+          const action =
+            type === "SET_WIDTH"
+              ? { type, width: Number(rawValue) }
+              : type === "SET_CJK"
+                ? { type, cjk: rawValue === "true" }
+                : { type, motion: rawValue };
+          dispatch(action);
+          return;
+        }
+
+        const scenarioButton = event.target.closest("[data-scenario]");
+        if (scenarioButton) {
+          currentScenario = scenarios.find(
+            (scenario) => scenario.id === scenarioButton.dataset.scenario
+          );
+          currentStep = 0;
+          const preferences = {
+            cjk: state.cjk,
+            motion: state.motion,
+            variant: state.variant,
+            width: state.width,
+          };
+          state = { ...WorkingModel.initialState(), ...preferences };
+          render();
+          return;
+        }
+
+        const stepButton = event.target.closest("[data-step-action]");
+        if (stepButton && !stepButton.disabled) {
+          dispatch({
+            type: stepButton.dataset.stepAction,
+            outcome: stepButton.dataset.stepOutcome || undefined,
+          });
+          currentStep += 1;
+          render();
+        }
+      });
+
+      document.addEventListener("change", (event) => {
+        if (event.target.matches('input[name="variant"]')) {
+          dispatch({ type: "SET_VARIANT", variant: event.target.value });
+        }
+      });
+
+      render();
+    </script>
+  </body>
+</html>
