@@ -8,7 +8,7 @@ terminal
 
 ## Stack
 
-A TypeScript pi package built against the documented `@earendil-works/pi-coding-agent` Extension and TUI APIs. The repository may contain multiple extensions; its eventual package topology remains an explicit product decision.
+A TypeScript multi-package repository built against the documented `@earendil-works/pi-coding-agent` Extension and TUI APIs. Pi UI is composed of independently installable Surface packages; the repository root is the local development aggregate.
 
 ## Users
 
@@ -29,9 +29,14 @@ The product runs inside pi's terminal interface during streaming responses, para
 ## Capabilities and Constraints
 
 - Product capabilities are organized into Composer, Transcript, Activity, and Inspector zones; Host Chrome is a scarce host surface, not a product zone.
-- The product family is **Pi UI** within the multi-product `pi-harness-kit` repository. The exact v1 capability set, package boundaries, and implementation order remain Roadmap decisions.
-- Future packages use an owner scope chosen at publication time and the `pi-ui[-<surface>]` form by default: `pi-ui-messages`, `pi-ui-input`, `pi-ui-status`, and `pi-ui-inspector` are default Surface forms, not pre-created packages.
-- Capabilities normally remain independently configurable inside their Surface package. A Capability becomes its own package only when independent installation, dependencies, compatibility risk, or release cadence creates a real boundary.
+- The product family is **Pi UI** within the multi-product `pi-harness-kit` repository. The exact v1 Capability set and implementation order remain Roadmap decisions.
+- Each selected Surface is created just in time as one `packages/pi-ui-<surface>` package with one extension entry, `version: 0.0.0`, and `private: true`; empty Surface packages are not pre-created.
+- `pi-ui-messages`, `pi-ui-input`, `pi-ui-status`, and `pi-ui-inspector` are default Surface forms. An owner scope and publishable versions are chosen only in a future npm publication effort.
+- Capabilities remain independently configurable inside their owning Surface package. A Capability becomes its own package only when independent installation, dependencies, compatibility risk, or release cadence creates a real boundary.
+- Surface packages do not directly depend on one another. Cross-Surface Capabilities belong to their primary user-entry Surface and may render in secondary Surfaces through public pi APIs.
+- Surface packages share a configuration contract, including a global `enabled` escape hatch, but no shared runtime. A core or internal shared package requires at least two real, non-trivial consumers.
+- The root `pi-harness-kit` manifest explicitly aggregates only entries in the current Release Scope, and `.pi/settings.json` loads that root. A Surface entry must not also be loaded directly in the same environment.
+- No public `pi-ui` aggregate/meta package exists until a publication effort proves a one-install user journey.
 - The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals.
 - npm publication, a public stability promise, and a broad terminal compatibility matrix are outside the current effort.
 - Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; merge requires maintainer confirmation.
