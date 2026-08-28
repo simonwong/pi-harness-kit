@@ -196,7 +196,9 @@ Built-in tool cards:
 
 Installs one composite autocomplete provider through `ctx.ui.addAutocompleteProvider()` during `session_start`. The provider gives explicit Pi UI triggers deterministic priority and delegates to the previous provider exactly once when no Pi UI syntax matches.
 
-Multi-Skill insertion and submission transformations remain visible, understandable, and undoable. v1 does not replace the main editor component.
+Multi-Skill insertion and submission transformations remain visible, understandable, and undoable.
+
+Inline skill auto-popup needs an editor trigger that pi 0.84.x exposes only inside the editor implementation. `pi-ui-input` therefore claims the main editor component through the documented `ctx.ui.setEditorComponent()` seam: it subclasses the public `CustomEditor`, keeps every editing behavior native, and adds exactly one post-input check that opens the completion popup at inline `/` tokens. The undocumented autocomplete-open method is isolated in a small adapter with a runtime capability check; when it disappears, the editor silently degrades to Tab-forced completion plus the native line-start menu. The shared `CustomEditor` prototype is never patched. When another extension already owns the editor, `pi-ui-input` keeps that owner, warns once, and its autocomplete provider and submission expansion remain active.
 
 ## Resource ownership and conflicts
 
@@ -206,7 +208,7 @@ Multi-Skill insertion and submission transformations remain visible, understanda
 | Markdown | Ordered chain; failure returns previous Markdown |
 | autocomplete | Wrap current provider and delegate exactly once |
 | built-in tool | Exclusive; override only when current source is builtin |
-| custom editor | Not claimed in v1; existing editor wins |
+| custom editor | Claimed only by `pi-ui-input` via a `CustomEditor` subclass; an existing non-native owner wins and inline auto-popup degrades to Tab |
 | footer/header | Not claimed in v1 |
 | Working singleton | Owned only while Status Capability is enabled; unresolved ownership follows documented load order |
 | hidden-thinking label | Touched only by Compact Thinking when needed; restore native default on shutdown |
