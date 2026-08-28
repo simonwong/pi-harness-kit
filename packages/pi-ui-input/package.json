@@ -1,0 +1,24 @@
+{
+  "name": "pi-ui-input",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pi UI Input Surface",
+  "keywords": [
+    "pi-extension",
+    "pi-package",
+    "pi-ui"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  }
+}

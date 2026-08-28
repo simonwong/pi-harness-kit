@@ -5,7 +5,7 @@ const readJson = async (url: URL): Promise<Record<string, unknown>> =>
   JSON.parse(await readFile(url, "utf8")) as Record<string, unknown>;
 
 describe("Pi UI development aggregate", () => {
-  it("loads the Status Surface exactly once through the repository root", async () => {
+  it("loads every v1 Surface exactly once through the repository root", async () => {
     const rootManifest = await readJson(
       new URL("../../package.json", import.meta.url)
     );
@@ -14,21 +14,27 @@ describe("Pi UI development aggregate", () => {
     );
 
     expect(rootManifest.pi).toMatchObject({
-      extensions: ["./packages/pi-ui-status/src/index.ts"],
+      extensions: [
+        "./packages/pi-ui-status/src/index.ts",
+        "./packages/pi-ui-input/src/index.ts",
+      ],
     });
     expect(localSettings).toEqual({ packages: [".."] });
   });
 
-  it("keeps pi-ui-status private and independently loadable", async () => {
-    const manifest = await readJson(
-      new URL("../../packages/pi-ui-status/package.json", import.meta.url)
-    );
+  it.each(["pi-ui-status", "pi-ui-input"])(
+    "keeps %s private and independently loadable",
+    async (surface) => {
+      const manifest = await readJson(
+        new URL(`../../packages/${surface}/package.json`, import.meta.url)
+      );
 
-    expect(manifest).toMatchObject({
-      name: "pi-ui-status",
-      pi: { extensions: ["./src/index.ts"] },
-      private: true,
-      version: "0.0.0",
-    });
-  });
+      expect(manifest).toMatchObject({
+        name: surface,
+        pi: { extensions: ["./src/index.ts"] },
+        private: true,
+        version: "0.0.0",
+      });
+    }
+  );
 });
