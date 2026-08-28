@@ -43,6 +43,15 @@ importers:
         specifier: '*'
         version: 0.84.2
 
+  packages/pi-ui-messages:
+    dependencies:
+      '@earendil-works/pi-coding-agent':
+        specifier: '*'
+        version: 0.84.2(ws@8.21.3)(zod@4.4.3)
+      '@earendil-works/pi-tui':
+        specifier: '*'
+        version: 0.84.2
+
   packages/pi-ui-status:
     dependencies:
       '@earendil-works/pi-coding-agent':

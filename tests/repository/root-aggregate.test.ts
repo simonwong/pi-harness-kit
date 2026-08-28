@@ -17,12 +17,13 @@ describe("Pi UI development aggregate", () => {
       extensions: [
         "./packages/pi-ui-status/src/index.ts",
         "./packages/pi-ui-input/src/index.ts",
+        "./packages/pi-ui-messages/src/index.ts",
       ],
     });
     expect(localSettings).toEqual({ packages: [".."] });
   });
 
-  it.each(["pi-ui-status", "pi-ui-input"])(
+  it.each(["pi-ui-status", "pi-ui-input", "pi-ui-messages"])(
     "keeps %s private and independently loadable",
     async (surface) => {
       const manifest = await readJson(

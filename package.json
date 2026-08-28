@@ -18,7 +18,8 @@
   "pi": {
     "extensions": [
       "./packages/pi-ui-status/src/index.ts",
-      "./packages/pi-ui-input/src/index.ts"
+      "./packages/pi-ui-input/src/index.ts",
+      "./packages/pi-ui-messages/src/index.ts"
     ],
     "skills": [
       "./skills"
