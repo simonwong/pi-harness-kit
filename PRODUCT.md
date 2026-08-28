@@ -20,7 +20,7 @@ Make pi easier and more pleasant to operate by improving how users compose reque
 
 ## Positioning
 
-Pi UI is a lightweight, pi-native UI/UX extension family: it borrows proven information architecture from Claude Code, Codex, and existing pi extensions while remaining incremental, reversible, theme-native, and grounded in pi's public APIs.
+Pi UI is a lightweight, pi-native UI/UX extension family: it borrows proven information architecture from Claude Code, Codex, and existing pi extensions while remaining incremental, reversible, theme-native, and public-first in its use of pi APIs.
 
 ## Operating Context
 
@@ -37,7 +37,7 @@ The product runs inside pi's terminal interface during streaming responses, para
 - Surface packages share a versioned, two-layer `pi-ui.json` contract, including a global `enabled` escape hatch and motion preference, but no shared runtime. Each package exposes only pi's default extension entry and keeps its runtime/test seam package-local. A core or internal shared package requires at least two real, non-trivial consumers.
 - The root `pi-harness-kit` manifest explicitly aggregates only entries in the current Release Scope, and `.pi/settings.json` loads that root. A Surface entry must not also be loaded directly in the same environment.
 - No public `pi-ui` aggregate/meta package exists until a publication effort proves a one-install user journey.
-- The local v1 uses documented public APIs only and does not fork, patch, or depend on private pi internals. TUI is the only enhanced mode in v1; RPC, JSON, and print modes safely preserve native behavior.
+- The local v1 is public-first and never forks pi. When no public seam exists for an accepted product behavior, a narrowly scoped internal (undocumented) call is allowed: it must be isolated in a small adapter module, guarded by a runtime capability check, degrade gracefully to native/public behavior when the seam disappears, and be re-verified on every pi upgrade because packages upgrade in lockstep with pi. Monkey-patching shared prototypes and deep-importing `dist/core` paths remain forbidden. TUI is the only enhanced mode in v1; RPC, JSON, and print modes safely preserve native behavior.
 - npm publication is the Release Horizon immediately after local v1 acceptance. A public stability promise and broad terminal compatibility matrix must be decided in that fresh publication effort.
 - Every selected feature is developed as an atomic commit and independent PR, in sequence from the latest `main`; it must satisfy the [Pi UI local-v1 quality contract](docs/engineering/pi-ui-v1-quality-contract.md), and merge requires maintainer confirmation.
 
