@@ -10,7 +10,11 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { KeyId } from "@earendil-works/pi-tui";
 import { loadMessagesConfig, type MessagesConfigSnapshot } from "./config.ts";
-import { formatHiddenLabel, SPINNER_FRAMES } from "./thinking-format.ts";
+import {
+  formatHiddenLabel,
+  SPINNER_FRAMES,
+  THINKING_TICK_MS_FULL,
+} from "./thinking-format.ts";
 import {
   createThinkingTracker,
   DURATION_ENTRY_TYPE,
@@ -21,12 +25,22 @@ import {
 import { transformThinking } from "./thinking-transformer.ts";
 
 export interface MessagesDependencies {
+  clearInterval?: (handle: unknown) => void;
   loadConfig: (context: ExtensionContext) => Promise<MessagesConfigSnapshot>;
   now: () => number;
   platform?: NodeJS.Platform;
+  setInterval?: (callback: () => void, milliseconds: number) => unknown;
+}
+
+const THINKING_WIDGET_ID = "pi-ui:messages:thinking-loop";
+
+interface RenderTui {
+  requestRender: (force?: boolean) => void;
 }
 
 const productionDependencies: MessagesDependencies = {
+  clearInterval: (handle) =>
+    clearInterval(handle as ReturnType<typeof setInterval>),
   loadConfig: async (context) => {
     const readOptionalFile = async (
       filePath: string
@@ -46,6 +60,7 @@ const productionDependencies: MessagesDependencies = {
   },
   now: () => Date.now(),
   platform: process.platform,
+  setInterval: (callback, milliseconds) => setInterval(callback, milliseconds),
 };
 
 const recordsFromBranch = (branch: readonly unknown[]): DurationRecord[] => {
@@ -107,6 +122,8 @@ export const createMessagesExtension =
     let currentLabel = "Thinking...";
     let frame = 0;
     let shortcut = "alt+t";
+    let thinkingTimer: unknown;
+    let renderTui: RenderTui | undefined;
 
     const loadConfig = (context: ExtensionContext) => {
       configSnapshot ??= dependencies.loadConfig(context);
@@ -172,6 +189,62 @@ export const createMessagesExtension =
       });
     };
 
+    const stopThinkingTimer = () => {
+      if (
+        thinkingTimer === undefined ||
+        dependencies.clearInterval === undefined
+      ) {
+        thinkingTimer = undefined;
+        return;
+      }
+      dependencies.clearInterval(thinkingTimer);
+      thinkingTimer = undefined;
+    };
+
+    const startThinkingTimer = (context: ExtensionContext) => {
+      if (
+        thinkingTimer !== undefined ||
+        dependencies.setInterval === undefined ||
+        !active
+      ) {
+        return;
+      }
+      const startedGeneration = generation;
+      thinkingTimer = dependencies.setInterval(() => {
+        if (
+          startedGeneration !== generation ||
+          !active ||
+          !tracker.isRunActive()
+        ) {
+          stopThinkingTimer();
+          return;
+        }
+        frame = (frame + 1) % SPINNER_FRAMES.length;
+        applyLabel(context);
+        renderTui?.requestRender(true);
+      }, THINKING_TICK_MS_FULL);
+    };
+
+    const syncThinkingTimer = (context: ExtensionContext) => {
+      if (tracker.isRunActive()) {
+        startThinkingTimer(context);
+        return;
+      }
+      stopThinkingTimer();
+    };
+
+    const installRenderLoop = (context: ExtensionContext) => {
+      context.ui.setWidget(THINKING_WIDGET_ID, (tui) => {
+        renderTui = tui;
+        return {
+          invalidate() {
+            // Render loop widget has no visual cache.
+          },
+          render: () => [],
+        };
+      });
+    };
+
     pi.registerMarkdownTransformer((markdown, transformContext) => {
       if (!active || transformContext.messageType !== "assistant-thinking") {
         return markdown;
@@ -198,6 +271,7 @@ export const createMessagesExtension =
     pi.on("session_start", async (_event, context) => {
       generation += 1;
       const currentGeneration = generation;
+      stopThinkingTimer();
       active = false;
       if (context.mode !== "tui") {
         return;
@@ -224,6 +298,7 @@ export const createMessagesExtension =
       }
       applyLabel(context, restored);
       installControls(context);
+      installRenderLoop(context);
     });
 
     pi.on("session_tree", (_event, context) => {
@@ -235,6 +310,11 @@ export const createMessagesExtension =
 
     pi.on("session_shutdown", (_event, context) => {
       generation += 1;
+      stopThinkingTimer();
+      renderTui = undefined;
+      if (context.mode === "tui") {
+        context.ui.setWidget(THINKING_WIDGET_ID, undefined);
+      }
       if (labelOwned && context.mode === "tui") {
         context.ui.setHiddenThinkingLabel();
       }
@@ -256,11 +336,9 @@ export const createMessagesExtension =
       if (mapped === undefined) {
         return;
       }
-      if (mapped.type === "thinking_delta") {
-        frame = (frame + 1) % SPINNER_FRAMES.length;
-      }
       tracker.handle(mapped, dependencies.now());
       persistFinished(context);
+      syncThinkingTimer(context);
     });
 
     pi.on("message_end", (event: MessageEndEvent, context) => {
@@ -272,5 +350,6 @@ export const createMessagesExtension =
         dependencies.now()
       );
       persistFinished(context);
+      stopThinkingTimer();
     });
   };

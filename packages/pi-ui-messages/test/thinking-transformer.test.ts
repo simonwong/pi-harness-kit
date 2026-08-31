@@ -22,7 +22,7 @@ describe("thinking transformer", () => {
       })
     ).toBe(
       [
-        "⠋ Thinking (4 lines, alt+t to expand)",
+        "⠋ Thinking · 2s (4 lines, alt+t to expand)",
         "reasoning step 2",
         "reasoning step 3",
         "reasoning step 4",

@@ -28,6 +28,7 @@ export const transformThinking = (
   const lines = countSourceLines(text);
   if (input.isStreaming) {
     const header = formatStreamingHeader({
+      elapsedMs: input.elapsedMs ?? 0,
       frame: input.frame,
       lines,
       platform: input.platform,

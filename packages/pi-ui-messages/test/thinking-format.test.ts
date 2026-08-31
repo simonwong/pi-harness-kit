@@ -10,12 +10,13 @@ describe("thinking presentation copy", () => {
   it("formats the streaming header with spinner and expand hint, without live seconds", () => {
     expect(
       formatStreamingHeader({
+        elapsedMs: 17_400,
         frame: 0,
         lines: 56,
         platform: "linux",
         shortcut: "alt+t",
       })
-    ).toBe("⠋ Thinking (56 lines, alt+t to expand)");
+    ).toBe("⠋ Thinking · 17s (56 lines, alt+t to expand)");
   });
 
   it("formats the completed single line without a tail preview", () => {
@@ -55,12 +56,13 @@ describe("thinking presentation copy", () => {
   it("shows option instead of alt on macOS", () => {
     expect(
       formatStreamingHeader({
+        elapsedMs: 1000,
         frame: 0,
         lines: 4,
         platform: "darwin",
         shortcut: "alt+t",
       })
-    ).toBe("⠋ Thinking (4 lines, option+t to expand)");
+    ).toBe("⠋ Thinking · 1s (4 lines, option+t to expand)");
     expect(
       formatCompletedLine({
         elapsedMs: 5000,

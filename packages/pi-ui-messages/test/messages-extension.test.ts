@@ -156,7 +156,7 @@ describe("createMessagesExtension", () => {
       })
     ).toBe(
       [
-        "⠙ Thinking (4 lines, alt+t to expand)",
+        "⠋ Thinking · 2s (4 lines, alt+t to expand)",
         "reasoning step 2",
         "reasoning step 3",
         "reasoning step 4",
@@ -265,6 +265,67 @@ describe("createMessagesExtension", () => {
         messageType: "assistant-thinking",
       })
     ).toBe("Thought for 12s (4 lines collapsed, alt+t to expand)");
+  });
+
+  it("redraws the thinking header on the 80ms loop while text stays the last three lines", async () => {
+    const clock = { now: 1000 };
+    const ticks: Array<() => void> = [];
+    const recording = createRecordingPi();
+    const context = createRecordingContext("tui");
+    createMessagesExtension({
+      clearInterval: () => undefined,
+      loadConfig: async () => enabledConfig(),
+      now: () => clock.now,
+      platform: "linux",
+      setInterval: (callback) => {
+        ticks.push(callback);
+        return ticks.length;
+      },
+    })(recording.api);
+    await startSession(recording, context.context);
+    await recording.emit(
+      "message_update",
+      {
+        assistantMessageEvent: { type: "thinking_start" },
+        message: { role: "assistant", timestamp: 4 },
+        type: "message_update",
+      },
+      context.context
+    );
+    await recording.emit(
+      "message_update",
+      {
+        assistantMessageEvent: {
+          delta: "keep the tail\nline two\nline three\nline four\n",
+          type: "thinking_delta",
+        },
+        message: { role: "assistant", timestamp: 4 },
+        type: "message_update",
+      },
+      context.context
+    );
+
+    expect(ticks).toHaveLength(1);
+    clock.now = 4000;
+    ticks[0]?.();
+
+    expect(
+      recording.transformers[0]?.(
+        "keep the tail\nline two\nline three\nline four",
+        {
+          availableWidth: 80,
+          isStreaming: true,
+          messageType: "assistant-thinking",
+        }
+      )
+    ).toBe(
+      [
+        "⠙ Thinking · 3s (4 lines, alt+t to expand)",
+        "line two",
+        "line three",
+        "line four",
+      ].join("\n")
+    );
   });
 
   it("stops compacting after session_shutdown", async () => {

@@ -5,6 +5,7 @@ export interface ContextRecording {
   context: ExtensionContext;
   hiddenThinkingLabel: string | undefined;
   notifications: { message: string; type?: string }[];
+  widgets: Record<string, unknown>;
 }
 
 export const createRecordingContext = (
@@ -29,10 +30,31 @@ export const createRecordingContext = (
         setHiddenThinkingLabel(label?: string) {
           recording.hiddenThinkingLabel = label;
         },
+        setWidget(
+          key: string,
+          content:
+            | ((tui: { requestRender: (force?: boolean) => void }) => unknown)
+            | string[]
+            | undefined
+        ) {
+          if (content === undefined) {
+            delete recording.widgets[key];
+            return;
+          }
+          recording.widgets[key] = content;
+          if (typeof content === "function") {
+            content({
+              requestRender() {
+                // Recording harness has no TUI frame loop.
+              },
+            });
+          }
+        },
       },
     } as unknown as ExtensionContext,
     hiddenThinkingLabel: undefined,
     notifications,
+    widgets: {},
   };
   return recording;
 };

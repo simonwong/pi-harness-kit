@@ -2,6 +2,8 @@ import { wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export const THINKING_TAIL_LINES = 3;
 
+export const THINKING_TICK_MS_FULL = 80;
+
 export const SPINNER_FRAMES = [
   "⠋",
   "⠙",
@@ -35,13 +37,15 @@ export const formatShortcutLabel = (
     .join("+");
 
 export const formatStreamingHeader = (input: {
+  elapsedMs: number;
   frame: number;
   lines: number;
   platform?: NodeJS.Platform;
   shortcut: string;
 }): string => {
   const shortcut = formatShortcutLabel(input.shortcut, input.platform);
-  return `${spinnerIcon(input.frame)} Thinking (${input.lines} lines, ${shortcut} to expand)`;
+  const seconds = Math.floor(input.elapsedMs / 1000);
+  return `${spinnerIcon(input.frame)} Thinking · ${seconds}s (${input.lines} lines, ${shortcut} to expand)`;
 };
 
 export const formatCompletedLine = (input: {
