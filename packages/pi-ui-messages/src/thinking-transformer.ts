@@ -10,6 +10,7 @@ export interface ThinkingTransformInput {
   availableWidth: number;
   compact: boolean;
   elapsedMs: number | undefined;
+  frame: number;
   isStreaming: boolean;
   platform?: NodeJS.Platform;
   shortcut: string;
@@ -27,6 +28,7 @@ export const transformThinking = (
   const lines = countSourceLines(text);
   if (input.isStreaming) {
     const header = formatStreamingHeader({
+      frame: input.frame,
       lines,
       platform: input.platform,
       shortcut: input.shortcut,

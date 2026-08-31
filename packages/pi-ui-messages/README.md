@@ -6,7 +6,7 @@ Private local-v1 package for the Pi UI Messages Surface. Its first Capability co
 
 Compact Thinking is enabled with zero configuration in Pi TUI mode.
 
-- While thinking streams, the block shows `Thinking (56 lines, alt+t to expand)` plus the latest three wrapped lines. No spinner in the card — live motion stays on Pi's Working line so the transcript only updates when thinking text arrives.
+- While thinking streams, the block shows `⠋ Thinking (56 lines, alt+t to expand)` plus the latest three wrapped lines. The spinner advances when thinking text arrives. Live elapsed seconds stay on Pi's Working line.
 - After the run ends, the block collapses to `Thought for 5s (60 lines collapsed, alt+t to expand)`.
 - `alt+t` toggles compact form and the original thinking text (shown as `option+t` on macOS, `alt+t` on Windows/Linux). `/compact-thinking` does the same if the shortcut cannot be registered. `ctrl+t` keeps Pi's native hide/show.
 - Durations persist as custom session entries and restore on session start and tree navigation. After a restore miss, the line still reports line count and omits duration rather than inventing one.
