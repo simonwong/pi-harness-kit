@@ -36,11 +36,24 @@ export const createWorkingState = (): WorkingState => ({
   phase: "inactive",
 });
 
+export interface UsageTokens {
+  output?: number;
+  reasoning?: number;
+}
+
 const normalizeOutput = (output: number): number => {
   if (!Number.isFinite(output) || output < 0) {
     return 0;
   }
   return Math.floor(output);
+};
+
+export const visibleOutputTokens = (usage: UsageTokens): number => {
+  const output = normalizeOutput(usage.output ?? 0);
+  if (output > 0) {
+    return output;
+  }
+  return normalizeOutput(usage.reasoning ?? 0);
 };
 
 export const updateWorkingState = (

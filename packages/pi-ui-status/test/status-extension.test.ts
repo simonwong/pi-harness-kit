@@ -121,6 +121,43 @@ describe("Status Surface Working runtime", () => {
     expect(clock.activeTimers()).toBe(1);
   });
 
+  it("shows reasoning tokens until output usage arrives", async () => {
+    const clock = new ManualClock();
+    const recording = createRecordingPi();
+    const ui = createRecordingContext();
+    createStatusExtension({
+      clock,
+      loadConfig: async () => enabledConfig,
+      random: () => 0,
+    })(recording.api);
+
+    await recording.emit(
+      "session_start",
+      { type: "session_start" },
+      ui.context
+    );
+    await recording.emit("agent_start", { type: "agent_start" }, ui.context);
+    await recording.emit(
+      "message_update",
+      {
+        message: { role: "assistant", usage: { output: 0, reasoning: 12 } },
+        type: "message_update",
+      },
+      ui.context
+    );
+    expect(visible(last(ui.workingMessages))).toBe("Vibing (↓ 12 0s)");
+
+    await recording.emit(
+      "message_update",
+      {
+        message: { role: "assistant", usage: { output: 50, reasoning: 12 } },
+        type: "message_update",
+      },
+      ui.context
+    );
+    expect(visible(last(ui.workingMessages))).toBe("Vibing (↓ 50 0s)");
+  });
+
   it("keeps a random word for ten seconds and prevents an immediate repeat", async () => {
     const clock = new ManualClock();
     const recording = createRecordingPi();

@@ -3,6 +3,7 @@ import {
   classifyRunOutcome,
   createWorkingState,
   updateWorkingState,
+  visibleOutputTokens,
 } from "../src/working-model.ts";
 
 describe("Working lifecycle model", () => {
@@ -192,5 +193,13 @@ describe("Working lifecycle model", () => {
     state = updateWorkingState(state, { type: "shutdown" });
 
     expect(state).toEqual(createWorkingState());
+  });
+
+  it("uses reasoning tokens only while output is still unreported", () => {
+    expect(visibleOutputTokens({ output: 0, reasoning: 40 })).toBe(40);
+    expect(visibleOutputTokens({ output: 200, reasoning: 40 })).toBe(200);
+    expect(visibleOutputTokens({ output: 84 })).toBe(84);
+    expect(visibleOutputTokens({ output: 0 })).toBe(0);
+    expect(visibleOutputTokens({ output: 0, reasoning: Number.NaN })).toBe(0);
   });
 });
