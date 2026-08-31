@@ -156,7 +156,7 @@ describe("createMessagesExtension", () => {
       })
     ).toBe(
       [
-        "⠙ Thinking (4 lines, alt+t to expand)",
+        "Thinking (4 lines, alt+t to expand)",
         "reasoning step 2",
         "reasoning step 3",
         "reasoning step 4",
@@ -286,58 +286,6 @@ describe("createMessagesExtension", () => {
         messageType: "assistant-thinking",
       })
     ).toBe(thinkingMarkdown);
-  });
-
-  it("uses a static streaming icon when motion is reduced", async () => {
-    const clock = { now: 2000 };
-    const recording = createRecordingPi();
-    const context = createRecordingContext("tui");
-    createMessagesExtension({
-      loadConfig: async () => ({
-        ...enabledConfig(),
-        motion: "reduced",
-      }),
-      now: () => clock.now,
-      platform: "linux",
-    })(recording.api);
-    await startSession(recording, context.context);
-    await recording.emit(
-      "message_update",
-      {
-        assistantMessageEvent: { type: "thinking_start" },
-        message: { role: "assistant", timestamp: 2 },
-        type: "message_update",
-      },
-      context.context
-    );
-    clock.now = 5000;
-    await recording.emit(
-      "message_update",
-      {
-        assistantMessageEvent: {
-          delta: thinkingMarkdown,
-          type: "thinking_delta",
-        },
-        message: { role: "assistant", timestamp: 2 },
-        type: "message_update",
-      },
-      context.context
-    );
-
-    expect(
-      recording.transformers[0]?.(thinkingMarkdown, {
-        availableWidth: 80,
-        isStreaming: true,
-        messageType: "assistant-thinking",
-      })
-    ).toBe(
-      [
-        "· Thinking (4 lines, alt+t to expand)",
-        "reasoning step 2",
-        "reasoning step 3",
-        "reasoning step 4",
-      ].join("\n")
-    );
   });
 
   it("ignores assistant text Markdown and leaves user messages untouched", async () => {

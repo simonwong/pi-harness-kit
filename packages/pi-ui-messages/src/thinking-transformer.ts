@@ -1,4 +1,3 @@
-import type { MotionPreference } from "./config.ts";
 import {
   countSourceLines,
   formatCompletedLine,
@@ -11,9 +10,7 @@ export interface ThinkingTransformInput {
   availableWidth: number;
   compact: boolean;
   elapsedMs: number | undefined;
-  frame: number;
   isStreaming: boolean;
-  motion: MotionPreference;
   platform?: NodeJS.Platform;
   shortcut: string;
 }
@@ -30,9 +27,7 @@ export const transformThinking = (
   const lines = countSourceLines(text);
   if (input.isStreaming) {
     const header = formatStreamingHeader({
-      frame: input.frame,
       lines,
-      motion: input.motion,
       platform: input.platform,
       shortcut: input.shortcut,
     });

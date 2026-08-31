@@ -15,15 +15,13 @@ describe("thinking transformer", () => {
         availableWidth: 80,
         compact: true,
         elapsedMs: 2000,
-        frame: 0,
         isStreaming: true,
-        motion: "full",
         platform: "linux",
         shortcut: "alt+t",
       })
     ).toBe(
       [
-        "⠋ Thinking (4 lines, alt+t to expand)",
+        "Thinking (4 lines, alt+t to expand)",
         "reasoning step 2",
         "reasoning step 3",
         "reasoning step 4",
@@ -37,9 +35,7 @@ describe("thinking transformer", () => {
         availableWidth: 80,
         compact: true,
         elapsedMs: 5000,
-        frame: 0,
         isStreaming: false,
-        motion: "full",
         platform: "linux",
         shortcut: "alt+t",
       })
@@ -52,9 +48,7 @@ describe("thinking transformer", () => {
         availableWidth: 80,
         compact: true,
         elapsedMs: 1000,
-        frame: 0,
         isStreaming: false,
-        motion: "full",
         platform: "linux",
         shortcut: "alt+t",
       })
@@ -67,9 +61,7 @@ describe("thinking transformer", () => {
         availableWidth: 80,
         compact: false,
         elapsedMs: 5000,
-        frame: 0,
         isStreaming: false,
-        motion: "full",
         platform: "linux",
         shortcut: "alt+t",
       })

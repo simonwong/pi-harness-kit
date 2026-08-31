@@ -7,28 +7,14 @@ import {
 } from "../src/thinking-format.ts";
 
 describe("thinking presentation copy", () => {
-  it("formats the streaming header with spinner and expand hint, without live seconds", () => {
+  it("formats the streaming header without a spinner or live seconds", () => {
     expect(
       formatStreamingHeader({
-        frame: 0,
         lines: 56,
-        motion: "full",
         platform: "linux",
         shortcut: "alt+t",
       })
-    ).toBe("⠋ Thinking (56 lines, alt+t to expand)");
-  });
-
-  it("uses a static icon when motion is reduced or off", () => {
-    expect(
-      formatStreamingHeader({
-        frame: 4,
-        lines: 8,
-        motion: "reduced",
-        platform: "linux",
-        shortcut: "alt+t",
-      })
-    ).toBe("· Thinking (8 lines, alt+t to expand)");
+    ).toBe("Thinking (56 lines, alt+t to expand)");
   });
 
   it("formats the completed single line without a tail preview", () => {
@@ -68,13 +54,11 @@ describe("thinking presentation copy", () => {
   it("shows option instead of alt on macOS", () => {
     expect(
       formatStreamingHeader({
-        frame: 0,
         lines: 4,
-        motion: "full",
         platform: "darwin",
         shortcut: "alt+t",
       })
-    ).toBe("⠋ Thinking (4 lines, option+t to expand)");
+    ).toBe("Thinking (4 lines, option+t to expand)");
     expect(
       formatCompletedLine({
         elapsedMs: 5000,

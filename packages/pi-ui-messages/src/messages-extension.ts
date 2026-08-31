@@ -10,7 +10,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import type { KeyId } from "@earendil-works/pi-tui";
 import { loadMessagesConfig, type MessagesConfigSnapshot } from "./config.ts";
-import { formatHiddenLabel, SPINNER_FRAMES } from "./thinking-format.ts";
+import { formatHiddenLabel } from "./thinking-format.ts";
 import {
   createThinkingTracker,
   DURATION_ENTRY_TYPE,
@@ -105,8 +105,6 @@ export const createMessagesExtension =
     let controlsInstalled = false;
     let labelOwned = false;
     let currentLabel = "Thinking...";
-    let frame = 0;
-    let motion: MessagesConfigSnapshot["motion"] = "full";
     let shortcut = "alt+t";
 
     const loadConfig = (context: ExtensionContext) => {
@@ -186,9 +184,7 @@ export const createMessagesExtension =
           availableWidth: transformContext.availableWidth,
           compact,
           elapsedMs,
-          frame,
           isStreaming: live,
-          motion,
           platform: dependencies.platform ?? process.platform,
           shortcut,
         });
@@ -211,7 +207,7 @@ export const createMessagesExtension =
       for (const diagnostic of config.diagnostics) {
         context.ui.notify(`pi-ui messages: ${diagnostic}`, "warning");
       }
-      ({ motion, shortcut } = config);
+      ({ shortcut } = config);
       if (
         config.native ||
         !config.enabledCapabilities.includes("compactThinking")
@@ -245,7 +241,6 @@ export const createMessagesExtension =
       controlsInstalled = false;
       labelOwned = false;
       currentLabel = "Thinking...";
-      frame = 0;
       tracker.reset();
       configSnapshot = undefined;
     });
@@ -257,9 +252,6 @@ export const createMessagesExtension =
       const mapped = trackerEventFromUpdate(event);
       if (mapped === undefined) {
         return;
-      }
-      if (mapped.type === "thinking_delta") {
-        frame = (frame + 1) % SPINNER_FRAMES.length;
       }
       tracker.handle(mapped, dependencies.now());
       persistFinished(context);

@@ -12,6 +12,7 @@ import {
   classifyRunOutcome,
   createWorkingState,
   updateWorkingState,
+  visibleOutputTokens,
   type WorkingState,
 } from "./working-model.ts";
 import {
@@ -437,7 +438,7 @@ export const createStatusExtension =
         return;
       }
       target.state = updateWorkingState(target.state, {
-        output: event.message.usage.output,
+        output: visibleOutputTokens(event.message.usage),
         type: "assistantUpdated",
       });
       applyActivePresentation(target);
@@ -449,7 +450,7 @@ export const createStatusExtension =
         return;
       }
       target.state = updateWorkingState(target.state, {
-        output: event.message.usage.output,
+        output: visibleOutputTokens(event.message.usage),
         type: "assistantEnded",
       });
       applyActivePresentation(target);
