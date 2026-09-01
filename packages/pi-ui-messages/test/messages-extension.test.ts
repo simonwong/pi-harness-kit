@@ -1,5 +1,6 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it } from "vitest";
+import { TOOL_CARD_NAMES } from "../src/activity-format.ts";
 import type { MessagesConfigSnapshot } from "../src/config.ts";
 import {
   createMessagesExtension,
@@ -9,6 +10,7 @@ import {
   DURATION_ENTRY_TYPE,
   digestThinking,
 } from "../src/thinking-tracker.ts";
+import type { WrapSource } from "../src/tool-cards.ts";
 import { createRecordingContext } from "./recording-context.ts";
 import { createRecordingPi } from "./recording-pi.ts";
 
@@ -41,6 +43,30 @@ const startSession = async (
 ) => {
   await recording.emit("session_start", { type: "session_start" }, context);
 };
+
+const fakeTools = (): WrapSource[] =>
+  TOOL_CARD_NAMES.map((name) => ({
+    description: name,
+    execute: async () => ({
+      content: [{ text: "ok", type: "text" }],
+      details: undefined,
+    }),
+    name,
+    parameters: { type: "object" } as WrapSource["parameters"],
+  }));
+
+const builtinCatalog = () =>
+  TOOL_CARD_NAMES.map((name) => ({
+    description: name,
+    name,
+    parameters: {},
+    sourceInfo: {
+      origin: "top-level" as const,
+      path: `<builtin:${name}>`,
+      scope: "temporary" as const,
+      source: "builtin" as const,
+    },
+  }));
 
 const thinkingMarkdown = [
   "reasoning step 1",
@@ -347,6 +373,63 @@ describe("createMessagesExtension", () => {
         messageType: "assistant-thinking",
       })
     ).toBe(thinkingMarkdown);
+  });
+
+  it("registers activity-row wrappers for builtin tools in tui", async () => {
+    const recording = createRecordingPi();
+    recording.allTools = builtinCatalog() as never;
+    const context = createRecordingContext("tui");
+    createMessagesExtension(createDependencies({ createTools: fakeTools }))(
+      recording.api
+    );
+    await startSession(recording, context.context);
+
+    expect(recording.tools.map((tool) => tool.name)).toEqual([
+      ...TOOL_CARD_NAMES,
+    ]);
+    expect(recording.tools[0]?.renderShell).toBe("self");
+  });
+
+  it("does not wrap tools that are not builtin", async () => {
+    const recording = createRecordingPi();
+    recording.allTools = TOOL_CARD_NAMES.map((name) => ({
+      description: name,
+      name,
+      parameters: {},
+      sourceInfo: {
+        origin: "top-level",
+        path: "ext.ts",
+        scope: "user",
+        source: "extension",
+      },
+    })) as never;
+    const context = createRecordingContext("tui");
+    createMessagesExtension(createDependencies({ createTools: fakeTools }))(
+      recording.api
+    );
+    await startSession(recording, context.context);
+    expect(recording.tools).toEqual([]);
+  });
+
+  it("does not wrap tools when toolCards is disabled", async () => {
+    const recording = createRecordingPi();
+    recording.allTools = builtinCatalog() as never;
+    const context = createRecordingContext("tui");
+    createMessagesExtension({
+      createTools: fakeTools,
+      loadConfig: async () => ({
+        diagnostics: [],
+        enabledCapabilities: ["compactThinking"],
+        motion: "full",
+        native: false,
+        shortcut: "alt+t",
+      }),
+      now: () => 0,
+      platform: "linux",
+    })(recording.api);
+    await startSession(recording, context.context);
+    expect(recording.tools).toEqual([]);
+    expect(recording.shortcuts.length).toBeGreaterThan(0);
   });
 
   it("ignores assistant text Markdown and leaves user messages untouched", async () => {

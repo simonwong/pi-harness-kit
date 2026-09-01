@@ -2,6 +2,8 @@ import type {
   ExtensionAPI,
   ExtensionContext,
   MarkdownTransformer,
+  ToolDefinition,
+  ToolInfo,
 } from "@earendil-works/pi-coding-agent";
 import type { KeyId } from "@earendil-works/pi-tui";
 
@@ -21,6 +23,7 @@ export interface RecordedCommand {
 }
 
 export interface RecordingPi {
+  allTools: ToolInfo[];
   api: ExtensionAPI;
   commands: RecordedCommand[];
   emit: (
@@ -31,15 +34,20 @@ export interface RecordingPi {
   entries: { customType: string; data: unknown }[];
   eventNames: () => string[];
   shortcuts: RecordedShortcut[];
+  tools: ToolDefinition[];
   transformers: MarkdownTransformer[];
 }
 
 export const createRecordingPi = (): RecordingPi => {
   const handlers = new Map<string, RecordedHandler[]>();
   const recording: RecordingPi = {
+    allTools: [],
     api: {
       appendEntry(customType: string, data?: unknown) {
         recording.entries.push({ customType, data });
+      },
+      getAllTools() {
+        return recording.allTools;
       },
       on(eventName: string, handler: RecordedHandler) {
         const eventHandlers = handlers.get(eventName) ?? [];
@@ -61,6 +69,9 @@ export const createRecordingPi = (): RecordingPi => {
       ) {
         recording.shortcuts.push({ handler: options.handler, shortcut });
       },
+      registerTool(definition: ToolDefinition) {
+        recording.tools.push(definition);
+      },
     } as unknown as ExtensionAPI,
     commands: [],
     async emit(eventName, event, context) {
@@ -72,6 +83,7 @@ export const createRecordingPi = (): RecordingPi => {
     entries: [],
     eventNames: () => [...handlers.keys()],
     shortcuts: [],
+    tools: [],
     transformers: [],
   };
   return recording;

@@ -9,6 +9,7 @@ import {
   type MessageUpdateEvent,
 } from "@earendil-works/pi-coding-agent";
 import type { KeyId } from "@earendil-works/pi-tui";
+import { TOOL_CARD_NAMES } from "./activity-format.ts";
 import { loadMessagesConfig, type MessagesConfigSnapshot } from "./config.ts";
 import {
   formatHiddenLabel,
@@ -23,9 +24,16 @@ import {
   type TrackerEvent,
 } from "./thinking-tracker.ts";
 import { transformThinking } from "./thinking-transformer.ts";
+import {
+  createDefaultTools,
+  isBuiltinSource,
+  type WrapSource,
+  wrapActivityTool,
+} from "./tool-cards.ts";
 
 export interface MessagesDependencies {
   clearInterval?: (handle: unknown) => void;
+  createTools?: (cwd: string) => WrapSource[];
   loadConfig: (context: ExtensionContext) => Promise<MessagesConfigSnapshot>;
   now: () => number;
   platform?: NodeJS.Platform;
@@ -41,6 +49,7 @@ interface RenderTui {
 const productionDependencies: MessagesDependencies = {
   clearInterval: (handle) =>
     clearInterval(handle as ReturnType<typeof setInterval>),
+  createTools: createDefaultTools,
   loadConfig: async (context) => {
     const readOptionalFile = async (
       filePath: string
@@ -233,6 +242,46 @@ export const createMessagesExtension =
       stopThinkingTimer();
     };
 
+    const startThinking = (context: ExtensionContext) => {
+      active = true;
+      compact = true;
+      const restored = restoreDurations(context);
+      if (restored === undefined) {
+        currentLabel = "Thinking...";
+      }
+      applyLabel(context, restored);
+      installControls(context);
+      installRenderLoop(context);
+    };
+
+    const installToolCards = (context: ExtensionContext) => {
+      const createTools = dependencies.createTools ?? createDefaultTools;
+      const catalog = new Map(
+        (pi.getAllTools?.() ?? []).map((tool) => [tool.name, tool])
+      );
+      for (const original of createTools(context.cwd)) {
+        if (
+          !TOOL_CARD_NAMES.includes(
+            original.name as (typeof TOOL_CARD_NAMES)[number]
+          )
+        ) {
+          continue;
+        }
+        const source = catalog.get(original.name)?.sourceInfo.source;
+        if (!isBuiltinSource(source)) {
+          continue;
+        }
+        try {
+          pi.registerTool(wrapActivityTool(original));
+        } catch {
+          context.ui.notify(
+            `pi-ui messages: tool card skipped for ${original.name}`,
+            "warning"
+          );
+        }
+      }
+    };
+
     const installRenderLoop = (context: ExtensionContext) => {
       context.ui.setWidget(THINKING_WIDGET_ID, (tui) => {
         renderTui = tui;
@@ -268,6 +317,27 @@ export const createMessagesExtension =
       }
     });
 
+    const activateTui = (
+      context: ExtensionContext,
+      config: MessagesConfigSnapshot
+    ) => {
+      for (const diagnostic of config.diagnostics) {
+        context.ui.notify(`pi-ui messages: ${diagnostic}`, "warning");
+      }
+      ({ shortcut } = config);
+      const thinkingEnabled =
+        !config.native &&
+        config.enabledCapabilities.includes("compactThinking");
+      const cardsEnabled =
+        !config.native && config.enabledCapabilities.includes("toolCards");
+      if (thinkingEnabled) {
+        startThinking(context);
+      }
+      if (cardsEnabled) {
+        installToolCards(context);
+      }
+    };
+
     pi.on("session_start", async (_event, context) => {
       generation += 1;
       const currentGeneration = generation;
@@ -280,25 +350,7 @@ export const createMessagesExtension =
       if (currentGeneration !== generation) {
         return;
       }
-      for (const diagnostic of config.diagnostics) {
-        context.ui.notify(`pi-ui messages: ${diagnostic}`, "warning");
-      }
-      ({ shortcut } = config);
-      if (
-        config.native ||
-        !config.enabledCapabilities.includes("compactThinking")
-      ) {
-        return;
-      }
-      active = true;
-      compact = true;
-      const restored = restoreDurations(context);
-      if (restored === undefined) {
-        currentLabel = "Thinking...";
-      }
-      applyLabel(context, restored);
-      installControls(context);
-      installRenderLoop(context);
+      activateTui(context, config);
     });
 
     pi.on("session_tree", (_event, context) => {
