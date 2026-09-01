@@ -184,7 +184,7 @@ export const createMessagesExtension =
         if (typeof entry !== "object" || entry === null) {
           continue;
         }
-        const record = entry as Record<string, unknown>;
+        const record = entry as unknown as Record<string, unknown>;
         const nested = record.message;
         const message =
           typeof nested === "object" && nested !== null
