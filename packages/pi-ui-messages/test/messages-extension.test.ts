@@ -375,6 +375,16 @@ describe("createMessagesExtension", () => {
     ).toBe(thinkingMarkdown);
   });
 
+  it("registers tool wrappers at load so /reload history can fold", () => {
+    const recording = createRecordingPi();
+    createMessagesExtension(createDependencies({ createTools: fakeTools }))(
+      recording.api
+    );
+    expect(recording.tools.map((tool) => tool.name)).toEqual([
+      ...TOOL_CARD_NAMES,
+    ]);
+  });
+
   it("registers activity-row wrappers for builtin tools in tui", async () => {
     const recording = createRecordingPi();
     recording.allTools = builtinCatalog() as never;
@@ -428,6 +438,7 @@ describe("createMessagesExtension", () => {
       }),
       now: () => 0,
       platform: "linux",
+      toolCardsAtLoad: false,
     })(recording.api);
     await startSession(recording, context.context);
     expect(recording.tools).toEqual([]);

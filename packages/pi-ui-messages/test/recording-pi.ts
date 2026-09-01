@@ -70,6 +70,13 @@ export const createRecordingPi = (): RecordingPi => {
         recording.shortcuts.push({ handler: options.handler, shortcut });
       },
       registerTool(definition: ToolDefinition) {
+        const existing = recording.tools.findIndex(
+          (tool) => tool.name === definition.name
+        );
+        if (existing >= 0) {
+          recording.tools[existing] = definition;
+          return;
+        }
         recording.tools.push(definition);
       },
     } as unknown as ExtensionAPI,

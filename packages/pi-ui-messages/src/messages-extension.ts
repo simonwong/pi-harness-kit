@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import {
@@ -9,7 +10,11 @@ import {
   type MessageUpdateEvent,
 } from "@earendil-works/pi-coding-agent";
 import type { KeyId } from "@earendil-works/pi-tui";
-import { loadMessagesConfig, type MessagesConfigSnapshot } from "./config.ts";
+import {
+  loadMessagesConfig,
+  type MessagesConfigSnapshot,
+  resolveMessagesConfig,
+} from "./config.ts";
 import {
   formatHiddenLabel,
   SPINNER_FRAMES,
@@ -45,6 +50,7 @@ export interface MessagesDependencies {
   now: () => number;
   platform?: NodeJS.Platform;
   setInterval?: (callback: () => void, milliseconds: number) => unknown;
+  toolCardsAtLoad?: boolean;
 }
 
 const THINKING_WIDGET_ID = "pi-ui:messages:thinking-loop";
@@ -288,25 +294,51 @@ export const createMessagesExtension =
       if (restored === undefined) {
         currentLabel = "Thinking...";
       }
-      applyLabel(context, restored);
       restoreToolStats(context);
+      applyLabel(context, restored);
       installControls(context);
       installRenderLoop(context);
     };
 
-    const installToolCards = (context: ExtensionContext) => {
+    const installToolCards = (cwd: string, context?: ExtensionContext) => {
       const createTools = dependencies.createTools ?? createDefaultTools;
-      for (const original of createTools(context.cwd)) {
+      for (const original of createTools(cwd)) {
         try {
           pi.registerTool(wrapActivityTool(original));
         } catch {
-          context.ui.notify(
+          context?.ui.notify(
             `pi-ui messages: tool card skipped for ${original.name}`,
             "warning"
           );
         }
       }
     };
+
+    const peekToolCardsEnabled = (): boolean => {
+      if (dependencies.toolCardsAtLoad !== undefined) {
+        return dependencies.toolCardsAtLoad;
+      }
+      try {
+        const globalContents = readFileSync(
+          path.join(getAgentDir(), "pi-ui.json"),
+          "utf8"
+        );
+        const snapshot = resolveMessagesConfig({
+          globalContents,
+          projectContents: null,
+          projectTrusted: false,
+        });
+        return (
+          !snapshot.native && snapshot.enabledCapabilities.includes("toolCards")
+        );
+      } catch {
+        return true;
+      }
+    };
+
+    if (peekToolCardsEnabled()) {
+      installToolCards(process.cwd());
+    }
 
     const installRenderLoop = (context: ExtensionContext) => {
       context.ui.setWidget(THINKING_WIDGET_ID, (tui) => {
@@ -363,7 +395,7 @@ export const createMessagesExtension =
         startThinking(context);
       }
       if (cardsEnabled) {
-        installToolCards(context);
+        installToolCards(context.cwd, context);
       }
     };
 
