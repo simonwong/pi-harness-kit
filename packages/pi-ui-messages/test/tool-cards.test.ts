@@ -18,20 +18,34 @@ const fakeRead = (): WrapSource => ({
   parameters: { type: "object" } as WrapSource["parameters"],
 });
 
-const renderContext = (args: Record<string, unknown>, isError = false) => ({
+const renderContext = (
+  args: Record<string, unknown>,
+  flags: { isError?: boolean; isPartial?: boolean } = {}
+) => ({
   args,
   argsComplete: true,
   cwd: "/project",
   executionStarted: true,
   expanded: false,
   invalidate: () => undefined,
-  isError,
-  isPartial: false,
+  isError: flags.isError === true,
+  isPartial: flags.isPartial === true,
   lastComponent: undefined,
   showImages: false,
   state: {},
   toolCallId: "call-1",
 });
+
+const linesOf = (
+  component: { render: (width: number) => string[] } | undefined
+) => {
+  if (component === undefined) {
+    return [];
+  }
+  return component
+    .render(80)
+    .map((line) => stripVTControlCharacters(line).trimEnd());
+};
 
 describe("wrapActivityTool", () => {
   it("paints a pending activity row from call args", () => {
@@ -39,18 +53,22 @@ describe("wrapActivityTool", () => {
     const component = tool.renderCall?.(
       { path: "package.json" },
       theme,
-      renderContext({ path: "package.json" })
+      renderContext({ path: "package.json" }, { isPartial: true })
     );
-    expect(
-      component
-        ?.render(80)
-        .map((line) => stripVTControlCharacters(line).trimEnd())
-    ).toEqual(["● Reading package.json", "  L package.json"]);
+    expect(linesOf(component)).toEqual([
+      "● Reading package.json",
+      "  L package.json",
+    ]);
   });
 
-  it("keeps settled compact rows to title plus evidence", () => {
+  it("keeps settled compact rows to title plus evidence in renderCall", () => {
     const tool = wrapActivityTool(fakeRead());
-    const component = tool.renderResult?.(
+    const header = tool.renderCall?.(
+      { path: "package.json" },
+      theme,
+      renderContext({ path: "package.json" })
+    );
+    const result = tool.renderResult?.(
       {
         content: [{ text: "line one\nline two", type: "text" }],
         details: undefined,
@@ -59,14 +77,14 @@ describe("wrapActivityTool", () => {
       theme,
       renderContext({ path: "package.json" })
     );
-    expect(
-      component
-        ?.render(80)
-        .map((line) => stripVTControlCharacters(line).trimEnd())
-    ).toEqual(["● Reading package.json", "  L package.json"]);
+    expect(linesOf(header)).toEqual([
+      "● Reading package.json",
+      "  L package.json",
+    ]);
+    expect(linesOf(result)).toEqual([]);
   });
 
-  it("shows error and expanded detail", () => {
+  it("shows expanded detail without a second header", () => {
     const tool = wrapActivityTool(fakeRead());
     const component = tool.renderResult?.(
       {
@@ -75,18 +93,9 @@ describe("wrapActivityTool", () => {
       },
       { expanded: true, isPartial: false },
       theme,
-      renderContext({ path: "gone.ts" }, true)
+      renderContext({ path: "gone.ts" }, { isError: true })
     );
-    expect(
-      component
-        ?.render(80)
-        .map((line) => stripVTControlCharacters(line).trimEnd())
-    ).toEqual([
-      "● Reading gone.ts",
-      "  L gone.ts",
-      "  Error: missing",
-      "  Error: missing",
-    ]);
+    expect(linesOf(component)).toEqual(["Error: missing", "Error: missing"]);
   });
 
   it("delegates execute to the original tool", async () => {
@@ -110,7 +119,7 @@ describe("wrapActivityTool", () => {
     expect(result.content[0]).toEqual({ text: "ok", type: "text" });
   });
 
-  it("renders within 1/20/40/80 columns", () => {
+  it("truncates each activity line to the render width", () => {
     const tool = wrapActivityTool(fakeRead());
     const component = tool.renderCall?.(
       { path: "packages/pi-ui-messages/src/tool-cards.ts" },

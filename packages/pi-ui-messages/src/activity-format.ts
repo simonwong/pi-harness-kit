@@ -24,14 +24,20 @@ export interface ActivityLineInput {
   title: string;
 }
 
+const COMMAND_HEAD = /\s+/;
+const LEADING_DOLLAR = /^\$ /;
+
 const clip = (text: string, max: number): string =>
   text.length <= max ? text : `${text.slice(0, Math.max(0, max - 1))}…`;
 
-const COMMAND_HEAD = /\s+/;
+export const basename = (path: string): string => {
+  const parts = path.split("/").filter(Boolean);
+  return parts.at(-1) ?? path;
+};
 
 const bashTitle = (command: string): string => {
   const head = command.trim().split(COMMAND_HEAD)[0] ?? "command";
-  const base = head.split("/").at(-1) ?? head;
+  const base = basename(head);
   if (base === "grep" || base === "rg") {
     return "Searching";
   }
@@ -44,6 +50,9 @@ const bashTitle = (command: string): string => {
   if (base === "cat" || base === "head" || base === "tail" || base === "sed") {
     return "Reading";
   }
+  if (base === "cd") {
+    return "Running cd";
+  }
   return `Running ${clip(base, 24)}`;
 };
 
@@ -51,6 +60,32 @@ const textArg = (args: Record<string, unknown>, key: string): string => {
   const value = args[key];
   return typeof value === "string" ? value : "";
 };
+
+const preferredArg = (args: Record<string, unknown>): string => {
+  const keys = [
+    "path",
+    "file_path",
+    "command",
+    "pattern",
+    "query",
+    "url",
+    "name",
+    "description",
+  ];
+  for (const key of keys) {
+    const value = textArg(args, key);
+    if (value.length > 0) {
+      return key === "command" ? `$ ${value}` : value;
+    }
+  }
+  return "";
+};
+
+const humanize = (tool: string): string =>
+  tool
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replaceAll(/[_-]+/g, " ")
+    .replaceAll(/\b\w/g, (char) => char.toUpperCase());
 
 export const activityCopy = (
   tool: string,
@@ -60,17 +95,17 @@ export const activityCopy = (
     case "read":
       return {
         evidence: textArg(args, "path") || "file",
-        title: `Reading ${clip(textArg(args, "path") || "file", 56)}`,
+        title: `Reading ${basename(textArg(args, "path") || "file")}`,
       };
     case "write":
       return {
         evidence: textArg(args, "path") || "file",
-        title: `Writing ${clip(textArg(args, "path") || "file", 56)}`,
+        title: `Writing ${basename(textArg(args, "path") || "file")}`,
       };
     case "edit":
       return {
         evidence: textArg(args, "path") || "file",
-        title: `Editing ${clip(textArg(args, "path") || "file", 56)}`,
+        title: `Editing ${basename(textArg(args, "path") || "file")}`,
       };
     case "grep":
       return {
@@ -85,7 +120,7 @@ export const activityCopy = (
     case "ls":
       return {
         evidence: textArg(args, "path") || ".",
-        title: `Listing ${clip(textArg(args, "path") || ".", 56)}`,
+        title: `Listing ${basename(textArg(args, "path") || ".")}`,
       };
     case "bash": {
       const command = textArg(args, "command");
@@ -94,14 +129,22 @@ export const activityCopy = (
         title: bashTitle(command),
       };
     }
-    default:
-      return { evidence: "", title: tool };
+    default: {
+      const evidence = preferredArg(args);
+      return {
+        evidence,
+        title:
+          evidence.length > 0
+            ? `${humanize(tool)} ${clip(basename(evidence.replace(LEADING_DOLLAR, "")), 40)}`
+            : humanize(tool),
+      };
+    }
   }
 };
 
 export const activityLines = (input: ActivityLineInput): string[] => {
   const lines = [`● ${input.title}`, `  L ${input.evidence}`];
-  if (input.error !== undefined) {
+  if (input.error !== undefined && input.error.length > 0) {
     lines.push(`  ${input.error}`);
   }
   if (
@@ -135,7 +178,7 @@ export const renderActivity = (
     `${dot} ${input.title}`,
     `  ${theme.fg("dim", "L")} ${theme.fg("muted", input.evidence)}`,
   ];
-  if (input.error !== undefined) {
+  if (input.error !== undefined && input.error.length > 0) {
     lines.push(`  ${theme.fg("error", input.error)}`);
   }
   if (

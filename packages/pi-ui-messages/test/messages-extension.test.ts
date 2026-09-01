@@ -390,7 +390,7 @@ describe("createMessagesExtension", () => {
     expect(recording.tools[0]?.renderShell).toBe("self");
   });
 
-  it("does not wrap tools that are not builtin", async () => {
+  it("wraps the provided tools even when catalog source is not builtin", async () => {
     const recording = createRecordingPi();
     recording.allTools = TOOL_CARD_NAMES.map((name) => ({
       description: name,
@@ -408,7 +408,9 @@ describe("createMessagesExtension", () => {
       recording.api
     );
     await startSession(recording, context.context);
-    expect(recording.tools).toEqual([]);
+    expect(recording.tools.map((tool) => tool.name)).toEqual([
+      ...TOOL_CARD_NAMES,
+    ]);
   });
 
   it("does not wrap tools when toolCards is disabled", async () => {

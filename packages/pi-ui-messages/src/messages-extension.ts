@@ -9,7 +9,6 @@ import {
   type MessageUpdateEvent,
 } from "@earendil-works/pi-coding-agent";
 import type { KeyId } from "@earendil-works/pi-tui";
-import { TOOL_CARD_NAMES } from "./activity-format.ts";
 import { loadMessagesConfig, type MessagesConfigSnapshot } from "./config.ts";
 import {
   formatHiddenLabel,
@@ -26,7 +25,6 @@ import {
 import { transformThinking } from "./thinking-transformer.ts";
 import {
   createDefaultTools,
-  isBuiltinSource,
   type WrapSource,
   wrapActivityTool,
 } from "./tool-cards.ts";
@@ -256,21 +254,7 @@ export const createMessagesExtension =
 
     const installToolCards = (context: ExtensionContext) => {
       const createTools = dependencies.createTools ?? createDefaultTools;
-      const catalog = new Map(
-        (pi.getAllTools?.() ?? []).map((tool) => [tool.name, tool])
-      );
       for (const original of createTools(context.cwd)) {
-        if (
-          !TOOL_CARD_NAMES.includes(
-            original.name as (typeof TOOL_CARD_NAMES)[number]
-          )
-        ) {
-          continue;
-        }
-        const source = catalog.get(original.name)?.sourceInfo.source;
-        if (!isBuiltinSource(source)) {
-          continue;
-        }
         try {
           pi.registerTool(wrapActivityTool(original));
         } catch {

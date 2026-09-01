@@ -7,13 +7,22 @@ describe("activityCopy", () => {
       evidence: "package.json",
       title: "Reading package.json",
     });
+    expect(
+      activityCopy("read", {
+        path: "/Users/simon/Documents/simon/github/pi-harness-kit/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js",
+      })
+    ).toEqual({
+      evidence:
+        "/Users/simon/Documents/simon/github/pi-harness-kit/node_modules/@earendil-works/pi-coding-agent/dist/modes/interactive/interactive-mode.js",
+      title: "Reading interactive-mode.js",
+    });
     expect(activityCopy("write", { path: "src/a.ts" })).toEqual({
       evidence: "src/a.ts",
-      title: "Writing src/a.ts",
+      title: "Writing a.ts",
     });
     expect(activityCopy("edit", { path: "src/a.ts" })).toEqual({
       evidence: "src/a.ts",
-      title: "Editing src/a.ts",
+      title: "Editing a.ts",
     });
     expect(
       activityCopy("grep", { path: "packages", pattern: "toolCards" })
@@ -28,6 +37,10 @@ describe("activityCopy", () => {
     expect(activityCopy("ls", { path: "packages" })).toEqual({
       evidence: "packages",
       title: "Listing packages",
+    });
+    expect(activityCopy("question", { text: "pick one" })).toEqual({
+      evidence: "",
+      title: "Question",
     });
     expect(activityCopy("bash", { command: "grep -rn toolCards" })).toEqual({
       evidence: "$ grep -rn toolCards",

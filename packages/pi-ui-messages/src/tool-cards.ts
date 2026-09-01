@@ -1,6 +1,5 @@
 import type {
   AgentToolResult,
-  Theme,
   ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import {
@@ -12,7 +11,7 @@ import {
   createReadTool,
   createWriteTool,
 } from "@earendil-works/pi-coding-agent";
-import { Text } from "@earendil-works/pi-tui";
+import { truncateToWidth } from "@earendil-works/pi-tui";
 import { activityCopy, renderActivity } from "./activity-format.ts";
 
 export interface WrapSource {
@@ -26,10 +25,30 @@ export interface WrapSource {
   promptSnippet?: string;
 }
 
-const paint = (_theme: Theme, last: unknown, body: string): Text => {
-  const text = last instanceof Text ? last : new Text("", 0, 0);
-  text.setText(body);
-  return text;
+class ActivityRow {
+  private body = "";
+
+  setText(body: string): void {
+    this.body = body;
+  }
+
+  invalidate(): void {
+    // Truncation depends on render width, not cached theme.
+  }
+
+  render(width: number): string[] {
+    if (this.body.length === 0) {
+      return [];
+    }
+    const limit = Math.max(1, width);
+    return this.body.split("\n").map((line) => truncateToWidth(line, limit));
+  }
+}
+
+const paint = (last: unknown, body: string): ActivityRow => {
+  const row = last instanceof ActivityRow ? last : new ActivityRow();
+  row.setText(body);
+  return row;
 };
 
 const resultText = (result: AgentToolResult<unknown>): string => {
@@ -85,33 +104,32 @@ export const wrapActivityTool = (original: WrapSource): ToolDefinition => {
     renderCall(args, theme, context) {
       const copy = activityCopy(name, args as Record<string, unknown>);
       return paint(
-        theme,
         context.lastComponent,
         renderActivity(theme, {
+          error: context.isError && !context.isPartial ? "" : undefined,
           evidence: copy.evidence,
-          pending: true,
+          pending: context.isPartial,
           title: copy.title,
         })
       );
     },
     renderResult(result, options, theme, context) {
-      const copy = activityCopy(name, context.args as Record<string, unknown>);
-      return paint(
-        theme,
-        context.lastComponent,
-        renderActivity(theme, {
-          detail: resultDetail(name, result),
-          error: resultError(result, context),
-          evidence: copy.evidence,
-          expanded: options.expanded,
-          pending: options.isPartial,
-          title: copy.title,
-        })
-      );
+      if (!options.expanded) {
+        return paint(context.lastComponent, "");
+      }
+      const error = resultError(result, context);
+      const detail = resultDetail(name, result);
+      const lines: string[] = [];
+      if (error !== undefined) {
+        lines.push(theme.fg("error", error));
+      }
+      if (detail.length > 0) {
+        for (const line of detail.split("\n")) {
+          lines.push(theme.fg("dim", line));
+        }
+      }
+      return paint(context.lastComponent, lines.join("\n"));
     },
     renderShell: "self",
   };
 };
-
-export const isBuiltinSource = (source: string | undefined): boolean =>
-  source === "builtin";
