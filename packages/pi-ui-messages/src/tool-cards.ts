@@ -13,6 +13,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth } from "@earendil-works/pi-tui";
 import { activityCopy, renderActivity } from "./activity-format.ts";
+import { shouldFoldTool } from "./tool-stats.ts";
 
 export interface WrapSource {
   description: string;
@@ -102,6 +103,9 @@ export const wrapActivityTool = (original: WrapSource): ToolDefinition => {
     promptGuidelines: original.promptGuidelines,
     promptSnippet: original.promptSnippet,
     renderCall(args, theme, context) {
+      if (shouldFoldTool(name) && !context.isPartial) {
+        return paint(context.lastComponent, "");
+      }
       const copy = activityCopy(name, args as Record<string, unknown>);
       return paint(
         context.lastComponent,

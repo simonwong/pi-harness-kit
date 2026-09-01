@@ -61,7 +61,7 @@ describe("wrapActivityTool", () => {
     ]);
   });
 
-  it("keeps settled compact rows to title plus evidence in renderCall", () => {
+  it("hides settled read/bash rows so they can fold into the thinking summary", () => {
     const tool = wrapActivityTool(fakeRead());
     const header = tool.renderCall?.(
       { path: "package.json" },
@@ -77,10 +77,7 @@ describe("wrapActivityTool", () => {
       theme,
       renderContext({ path: "package.json" })
     );
-    expect(linesOf(header)).toEqual([
-      "● Reading package.json",
-      "  L package.json",
-    ]);
+    expect(linesOf(header)).toEqual([]);
     expect(linesOf(result)).toEqual([]);
   });
 
@@ -124,7 +121,10 @@ describe("wrapActivityTool", () => {
     const component = tool.renderCall?.(
       { path: "packages/pi-ui-messages/src/tool-cards.ts" },
       theme,
-      renderContext({ path: "packages/pi-ui-messages/src/tool-cards.ts" })
+      renderContext(
+        { path: "packages/pi-ui-messages/src/tool-cards.ts" },
+        { isPartial: true }
+      )
     );
     for (const width of [1, 20, 40, 80]) {
       const lines = component?.render(width) ?? [];

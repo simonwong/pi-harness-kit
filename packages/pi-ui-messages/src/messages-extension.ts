@@ -19,6 +19,7 @@ import {
   createThinkingTracker,
   DURATION_ENTRY_TYPE,
   type DurationRecord,
+  digestThinking,
   isDurationRecord,
   type TrackerEvent,
 } from "./thinking-tracker.ts";
@@ -28,6 +29,14 @@ import {
   type WrapSource,
   wrapActivityTool,
 } from "./tool-cards.ts";
+import {
+  countTools,
+  extractThinkingTexts,
+  extractToolCalls,
+  formatToolStats,
+  hasToolStats,
+  type ToolStats,
+} from "./tool-stats.ts";
 
 export interface MessagesDependencies {
   clearInterval?: (handle: unknown) => void;
@@ -120,6 +129,7 @@ export const createMessagesExtension =
   ): ExtensionFactory =>
   (pi) => {
     const tracker = createThinkingTracker();
+    const toolStatsByDigest = new Map<string, ToolStats>();
     let configSnapshot: Promise<MessagesConfigSnapshot> | undefined;
     let generation = 0;
     let active = false;
@@ -153,6 +163,37 @@ export const createMessagesExtension =
       for (const record of finished) {
         pi.appendEntry(DURATION_ENTRY_TYPE, record);
         applyLabel(context, record);
+      }
+    };
+
+    const rememberToolStats = (content: unknown): void => {
+      const stats = countTools(extractToolCalls(content));
+      if (!hasToolStats(stats)) {
+        return;
+      }
+      for (const text of extractThinkingTexts(content)) {
+        const trimmed = text.trim();
+        if (trimmed.length > 0) {
+          toolStatsByDigest.set(digestThinking(trimmed), stats);
+        }
+      }
+    };
+
+    const restoreToolStats = (context: ExtensionContext): void => {
+      for (const entry of context.sessionManager.getBranch()) {
+        if (typeof entry !== "object" || entry === null) {
+          continue;
+        }
+        const record = entry as Record<string, unknown>;
+        const nested = record.message;
+        const message =
+          typeof nested === "object" && nested !== null
+            ? (nested as Record<string, unknown>)
+            : record;
+        if (message.role !== "assistant") {
+          continue;
+        }
+        rememberToolStats(message.content);
       }
     };
 
@@ -248,6 +289,7 @@ export const createMessagesExtension =
         currentLabel = "Thinking...";
       }
       applyLabel(context, restored);
+      restoreToolStats(context);
       installControls(context);
       installRenderLoop(context);
     };
@@ -287,14 +329,17 @@ export const createMessagesExtension =
         const elapsedMs = live
           ? tracker.streamingElapsedMs(dependencies.now())
           : tracker.lookup(markdown)?.ms;
+        const stats = toolStatsByDigest.get(digestThinking(markdown.trim()));
         return transformThinking(markdown, {
           availableWidth: transformContext.availableWidth,
           compact,
           elapsedMs,
           frame,
+          highlight: stats?.highlight,
           isStreaming: live,
           platform: dependencies.platform ?? process.platform,
           shortcut,
+          toolSummary: stats === undefined ? undefined : formatToolStats(stats),
         });
       } catch {
         return markdown;
@@ -361,6 +406,7 @@ export const createMessagesExtension =
       currentLabel = "Thinking...";
       frame = 0;
       tracker.reset();
+      toolStatsByDigest.clear();
       configSnapshot = undefined;
     });
 
@@ -386,6 +432,8 @@ export const createMessagesExtension =
         dependencies.now()
       );
       persistFinished(context);
+      rememberToolStats(event.message.content);
+      applyLabel(context);
       stopThinkingTimer();
     });
   };

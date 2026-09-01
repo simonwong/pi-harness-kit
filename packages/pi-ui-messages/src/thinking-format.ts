@@ -50,14 +50,23 @@ export const formatStreamingHeader = (input: {
 
 export const formatCompletedLine = (input: {
   elapsedMs: number | undefined;
+  highlight?: string;
   lines: number;
   platform?: NodeJS.Platform;
   shortcut: string;
+  toolSummary?: string;
 }): string => {
   const duration =
     input.elapsedMs === undefined
       ? ""
       : ` for ${Math.round(input.elapsedMs / 1000)}s`;
+  if (input.toolSummary !== undefined && input.toolSummary.length > 0) {
+    let line = `Thought${duration}, ${input.toolSummary}`;
+    if (input.highlight !== undefined && input.highlight.length > 0) {
+      line += `\n  L Loaded ${input.highlight}`;
+    }
+    return line;
+  }
   const shortcut = formatShortcutLabel(input.shortcut, input.platform);
   return `Thought${duration} (${input.lines} lines collapsed, ${shortcut} to expand)`;
 };

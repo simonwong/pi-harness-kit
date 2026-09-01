@@ -50,6 +50,14 @@ describe("activityCopy", () => {
       evidence: "$ pnpm test",
       title: "Running pnpm",
     });
+    expect(
+      activityCopy("bash", {
+        command: "cd /repo\npnpm exec ultracite check\ngit commit -m 'fix'",
+      })
+    ).toEqual({
+      evidence: "$ cd /repo pnpm exec ultracite check git commit -m 'fix'",
+      title: "Running cd",
+    });
   });
 });
 

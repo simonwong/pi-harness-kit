@@ -30,6 +30,25 @@ describe("thinking presentation copy", () => {
     ).toBe("Thought for 5s (60 lines collapsed, alt+t to expand)");
   });
 
+  it("folds tool counts into the completed thinking line", () => {
+    expect(
+      formatCompletedLine({
+        elapsedMs: 24_000,
+        highlight: "CLAUDE.md",
+        lines: 12,
+        platform: "linux",
+        shortcut: "alt+t",
+        toolSummary:
+          "searched for 5 patterns, read 1 file, listed 3 directories, ran 1 shell command",
+      })
+    ).toBe(
+      [
+        "Thought for 24s, searched for 5 patterns, read 1 file, listed 3 directories, ran 1 shell command",
+        "  L Loaded CLAUDE.md",
+      ].join("\n")
+    );
+  });
+
   it("omits fabricated duration on completed historical thinking", () => {
     expect(
       formatCompletedLine({

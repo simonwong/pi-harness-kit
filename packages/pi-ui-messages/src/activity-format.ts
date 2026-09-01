@@ -30,6 +30,9 @@ const LEADING_DOLLAR = /^\$ /;
 const clip = (text: string, max: number): string =>
   text.length <= max ? text : `${text.slice(0, Math.max(0, max - 1))}…`;
 
+const oneLine = (text: string): string =>
+  text.split(COMMAND_HEAD).filter(Boolean).join(" ");
+
 export const basename = (path: string): string => {
   const parts = path.split("/").filter(Boolean);
   return parts.at(-1) ?? path;
@@ -94,7 +97,7 @@ export const activityCopy = (
   switch (tool) {
     case "read":
       return {
-        evidence: textArg(args, "path") || "file",
+        evidence: oneLine(textArg(args, "path") || "file"),
         title: `Reading ${basename(textArg(args, "path") || "file")}`,
       };
     case "write":
@@ -123,7 +126,7 @@ export const activityCopy = (
         title: `Listing ${basename(textArg(args, "path") || ".")}`,
       };
     case "bash": {
-      const command = textArg(args, "command");
+      const command = oneLine(textArg(args, "command"));
       return {
         evidence: `$ ${command}`,
         title: bashTitle(command),

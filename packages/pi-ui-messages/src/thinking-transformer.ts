@@ -11,9 +11,11 @@ export interface ThinkingTransformInput {
   compact: boolean;
   elapsedMs: number | undefined;
   frame: number;
+  highlight?: string;
   isStreaming: boolean;
   platform?: NodeJS.Platform;
   shortcut: string;
+  toolSummary?: string;
 }
 
 export const transformThinking = (
@@ -42,8 +44,10 @@ export const transformThinking = (
 
   return formatCompletedLine({
     elapsedMs: input.elapsedMs,
+    highlight: input.highlight,
     lines,
     platform: input.platform,
     shortcut: input.shortcut,
+    toolSummary: input.toolSummary,
   });
 };
