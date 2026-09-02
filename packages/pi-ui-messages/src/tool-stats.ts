@@ -51,20 +51,34 @@ const classify = (
     return "write";
   }
   if (name === "bash") {
-    const head = bashHead(textArg(args, "command"));
-    if (head === "grep" || head === "rg") {
-      return "pattern";
-    }
-    if (head === "ls") {
-      return "list";
-    }
-    if (head === "find") {
-      return "pattern";
-    }
-    return "shell";
+    return classifyBash(textArg(args, "command"));
   }
   return "skip";
 };
+
+const classifyBash = (
+  command: string
+): "list" | "pattern" | "shell" => {
+  const head = bashHead(command);
+  if (head === "grep" || head === "rg" || head === "find") {
+    return "pattern";
+  }
+  if (head === "ls") {
+    return "list";
+  }
+  return "shell";
+};
+
+const BUCKET_KEY = {
+  edit: "edits",
+  file: "files",
+  list: "lists",
+  pattern: "patterns",
+  shell: "shells",
+  write: "writes",
+} as const;
+
+const FILE_BUCKETS = new Set(["edits", "files", "writes"]);
 
 export const countTools = (calls: readonly ToolCallFact[]): ToolStats => {
   const stats: ToolStats = {
@@ -78,28 +92,14 @@ export const countTools = (calls: readonly ToolCallFact[]): ToolStats => {
   for (const call of calls) {
     const args = isRecord(call.args) ? call.args : {};
     const bucket = classify(call.name, args);
+    if (bucket === "skip") {
+      continue;
+    }
+    const key = BUCKET_KEY[bucket];
+    stats[key] += 1;
     const path = textArg(args, "path");
-    if (bucket === "file") {
-      stats.files += 1;
-      if (path.length > 0) {
-        stats.highlight = path;
-      }
-    } else if (bucket === "edit") {
-      stats.edits += 1;
-      if (path.length > 0) {
-        stats.highlight = path;
-      }
-    } else if (bucket === "write") {
-      stats.writes += 1;
-      if (path.length > 0) {
-        stats.highlight = path;
-      }
-    } else if (bucket === "list") {
-      stats.lists += 1;
-    } else if (bucket === "pattern") {
-      stats.patterns += 1;
-    } else if (bucket === "shell") {
-      stats.shells += 1;
+    if (path.length > 0 && FILE_BUCKETS.has(key)) {
+      stats.highlight = path;
     }
   }
   return stats;
