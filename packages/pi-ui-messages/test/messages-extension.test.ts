@@ -231,6 +231,92 @@ describe("createMessagesExtension", () => {
     ).toBe("  Thought for 3s (4 lines collapsed, alt+t to expand)");
   });
 
+  it("keeps historical Thought compact while a later turn is thinking", async () => {
+    const clock = { now: 1000 };
+    const recording = createRecordingPi();
+    const context = createRecordingContext("tui");
+    createMessagesExtension(timedDependencies(clock))(recording.api);
+    await startSession(recording, context.context);
+
+    await recording.emit(
+      "message_update",
+      {
+        assistantMessageEvent: { type: "thinking_start" },
+        message: { role: "assistant", timestamp: 1 },
+        type: "message_update",
+      },
+      context.context
+    );
+    clock.now = 4000;
+    await recording.emit(
+      "message_update",
+      {
+        assistantMessageEvent: {
+          delta: `${thinkingMarkdown}\n`,
+          type: "thinking_delta",
+        },
+        message: { role: "assistant", timestamp: 1 },
+        type: "message_update",
+      },
+      context.context
+    );
+    await recording.emit(
+      "message_update",
+      {
+        assistantMessageEvent: { type: "text_start" },
+        message: { role: "assistant", timestamp: 1 },
+        type: "message_update",
+      },
+      context.context
+    );
+    await recording.emit(
+      "message_end",
+      {
+        message: { role: "assistant", timestamp: 1 },
+        type: "message_end",
+      },
+      context.context
+    );
+
+    clock.now = 5000;
+    await recording.emit(
+      "message_update",
+      {
+        assistantMessageEvent: { type: "thinking_start" },
+        message: { role: "assistant", timestamp: 2 },
+        type: "message_update",
+      },
+      context.context
+    );
+    await recording.emit(
+      "message_update",
+      {
+        assistantMessageEvent: {
+          delta: "fresh reasoning\n",
+          type: "thinking_delta",
+        },
+        message: { role: "assistant", timestamp: 2 },
+        type: "message_update",
+      },
+      context.context
+    );
+
+    expect(
+      recording.transformers[0]?.(thinkingMarkdown, {
+        availableWidth: 80,
+        isStreaming: false,
+        messageType: "assistant-thinking",
+      })
+    ).toBe("  Thought for 3s (4 lines collapsed, alt+t to expand)");
+    expect(
+      recording.transformers[0]?.("fresh reasoning", {
+        availableWidth: 80,
+        isStreaming: true,
+        messageType: "assistant-thinking",
+      })
+    ).toBe("  ⠋ Thinking · 0s (1 lines, alt+t to expand)\n  fresh reasoning");
+  });
+
   it("expands through the registered shortcut and restores compact form", async () => {
     const recording = createRecordingPi();
     const context = createRecordingContext("tui");

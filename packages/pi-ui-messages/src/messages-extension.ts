@@ -354,6 +354,28 @@ export const createMessagesExtension =
       });
     };
 
+    const transformCompactThinking = (
+      markdown: string,
+      transformContext: { availableWidth: number; isStreaming: boolean }
+    ): string => {
+      const live = transformContext.isStreaming && tracker.isRunActive();
+      const elapsedMs = live
+        ? tracker.streamingElapsedMs(dependencies.now())
+        : tracker.lookup(markdown)?.ms;
+      const stats = toolStatsByDigest.get(digestThinking(markdown.trim()));
+      return transformThinking(markdown, {
+        availableWidth: transformContext.availableWidth,
+        compact,
+        elapsedMs,
+        frame,
+        highlight: stats?.highlight,
+        isStreaming: live,
+        platform: dependencies.platform ?? process.platform,
+        shortcut,
+        toolSummary: stats === undefined ? undefined : formatToolStats(stats),
+      });
+    };
+
     pi.registerMarkdownTransformer((markdown, transformContext) => {
       if (!transcriptActive) {
         return markdown;
@@ -365,22 +387,7 @@ export const createMessagesExtension =
         return markdown;
       }
       try {
-        const live = tracker.isRunActive();
-        const elapsedMs = live
-          ? tracker.streamingElapsedMs(dependencies.now())
-          : tracker.lookup(markdown)?.ms;
-        const stats = toolStatsByDigest.get(digestThinking(markdown.trim()));
-        return transformThinking(markdown, {
-          availableWidth: transformContext.availableWidth,
-          compact,
-          elapsedMs,
-          frame,
-          highlight: stats?.highlight,
-          isStreaming: live,
-          platform: dependencies.platform ?? process.platform,
-          shortcut,
-          toolSummary: stats === undefined ? undefined : formatToolStats(stats),
-        });
+        return transformCompactThinking(markdown, transformContext);
       } catch {
         return markdown;
       }
