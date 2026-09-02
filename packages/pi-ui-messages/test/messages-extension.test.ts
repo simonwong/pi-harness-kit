@@ -182,10 +182,10 @@ describe("createMessagesExtension", () => {
       })
     ).toBe(
       [
-        "⠋ Thinking · 2s (4 lines, alt+t to expand)",
-        "reasoning step 2",
-        "reasoning step 3",
-        "reasoning step 4",
+        "  ⠋ Thinking · 2s (4 lines, alt+t to expand)",
+        "  reasoning step 2",
+        "  reasoning step 3",
+        "  reasoning step 4",
       ].join("\n")
     );
 
@@ -205,7 +205,7 @@ describe("createMessagesExtension", () => {
         isStreaming: true,
         messageType: "assistant-thinking",
       })
-    ).toBe("● Thought for 3s (4 lines collapsed, alt+t to expand)");
+    ).toBe("  Thought for 3s (4 lines collapsed, alt+t to expand)");
 
     clock.now = 6000;
     await recording.emit(
@@ -228,7 +228,7 @@ describe("createMessagesExtension", () => {
         isStreaming: false,
         messageType: "assistant-thinking",
       })
-    ).toBe("● Thought for 3s (4 lines collapsed, alt+t to expand)");
+    ).toBe("  Thought for 3s (4 lines collapsed, alt+t to expand)");
   });
 
   it("expands through the registered shortcut and restores compact form", async () => {
@@ -261,7 +261,7 @@ describe("createMessagesExtension", () => {
         isStreaming: false,
         messageType: "assistant-thinking",
       })
-    ).toBe("● Thought (4 lines collapsed, alt+t to expand)");
+    ).toBe("  Thought (4 lines collapsed, alt+t to expand)");
   });
 
   it("restores persisted durations from the session branch", async () => {
@@ -290,7 +290,7 @@ describe("createMessagesExtension", () => {
         isStreaming: false,
         messageType: "assistant-thinking",
       })
-    ).toBe("● Thought for 12s (4 lines collapsed, alt+t to expand)");
+    ).toBe("  Thought for 12s (4 lines collapsed, alt+t to expand)");
   });
 
   it("redraws the thinking header on the 80ms loop while text stays the last three lines", async () => {
@@ -346,10 +346,10 @@ describe("createMessagesExtension", () => {
       )
     ).toBe(
       [
-        "⠙ Thinking · 3s (4 lines, alt+t to expand)",
-        "line two",
-        "line three",
-        "line four",
+        "  ⠙ Thinking · 3s (4 lines, alt+t to expand)",
+        "  line two",
+        "  line three",
+        "  line four",
       ].join("\n")
     );
   });
@@ -445,7 +445,7 @@ describe("createMessagesExtension", () => {
     expect(recording.shortcuts.length).toBeGreaterThan(0);
   });
 
-  it("ignores assistant text Markdown and leaves user messages untouched", async () => {
+  it("prefixes assistant replies with a bullet and leaves user messages untouched", async () => {
     const recording = createRecordingPi();
     const context = createRecordingContext("tui");
     createMessagesExtension(createDependencies())(recording.api);
@@ -456,6 +456,13 @@ describe("createMessagesExtension", () => {
         availableWidth: 80,
         isStreaming: false,
         messageType: "assistant",
+      })
+    ).toBe("● hello");
+    expect(
+      recording.transformers[0]?.("hello", {
+        availableWidth: 80,
+        isStreaming: false,
+        messageType: "user",
       })
     ).toBe("hello");
   });

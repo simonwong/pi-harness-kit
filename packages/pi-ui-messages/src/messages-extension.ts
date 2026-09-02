@@ -17,6 +17,7 @@ import {
 } from "./config.ts";
 import {
   formatHiddenLabel,
+  prefixAssistantReply,
   SPINNER_FRAMES,
   THINKING_TICK_MS_FULL,
 } from "./thinking-format.ts";
@@ -139,6 +140,7 @@ export const createMessagesExtension =
     let configSnapshot: Promise<MessagesConfigSnapshot> | undefined;
     let generation = 0;
     let active = false;
+    let transcriptActive = false;
     let compact = true;
     let controlsInstalled = false;
     let labelOwned = false;
@@ -353,6 +355,12 @@ export const createMessagesExtension =
     };
 
     pi.registerMarkdownTransformer((markdown, transformContext) => {
+      if (!transcriptActive) {
+        return markdown;
+      }
+      if (transformContext.messageType === "assistant") {
+        return prefixAssistantReply(markdown);
+      }
       if (!active || transformContext.messageType !== "assistant-thinking") {
         return markdown;
       }
@@ -391,6 +399,7 @@ export const createMessagesExtension =
         config.enabledCapabilities.includes("compactThinking");
       const cardsEnabled =
         !config.native && config.enabledCapabilities.includes("toolCards");
+      transcriptActive = thinkingEnabled || cardsEnabled;
       if (thinkingEnabled) {
         startThinking(context);
       }
@@ -404,6 +413,7 @@ export const createMessagesExtension =
       const currentGeneration = generation;
       stopThinkingTimer();
       active = false;
+      transcriptActive = false;
       if (context.mode !== "tui") {
         return;
       }
@@ -432,6 +442,7 @@ export const createMessagesExtension =
         context.ui.setHiddenThinkingLabel();
       }
       active = false;
+      transcriptActive = false;
       compact = true;
       controlsInstalled = false;
       labelOwned = false;

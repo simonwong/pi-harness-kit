@@ -3,6 +3,7 @@ import {
   formatCompletedLine,
   formatHiddenLabel,
   formatStreamingHeader,
+  prefixAssistantReply,
   tailWindow,
 } from "../src/thinking-format.ts";
 
@@ -27,7 +28,7 @@ describe("thinking presentation copy", () => {
         platform: "linux",
         shortcut: "alt+t",
       })
-    ).toBe("● Thought for 5s (60 lines collapsed, alt+t to expand)");
+    ).toBe("Thought for 5s (60 lines collapsed, alt+t to expand)");
   });
 
   it("folds tool counts into the completed thinking line", () => {
@@ -43,7 +44,7 @@ describe("thinking presentation copy", () => {
       })
     ).toBe(
       [
-        "● Thought for 24s, searched for 5 patterns, read 1 file, listed 3 directories, ran 1 shell command",
+        "Thought for 24s, searched for 5 patterns, read 1 file, listed 3 directories, ran 1 shell command",
         "  L Loaded CLAUDE.md",
       ].join("\n")
     );
@@ -57,7 +58,7 @@ describe("thinking presentation copy", () => {
         platform: "linux",
         shortcut: "alt+o",
       })
-    ).toBe("● Thought (12 lines collapsed, alt+o to expand)");
+    ).toBe("Thought (12 lines collapsed, alt+o to expand)");
   });
 
   it("keeps the last three lines for the streaming tail window", () => {
@@ -89,7 +90,13 @@ describe("thinking presentation copy", () => {
         platform: "darwin",
         shortcut: "alt+t",
       })
-    ).toBe("● Thought for 5s (60 lines collapsed, option+t to expand)");
+    ).toBe("Thought for 5s (60 lines collapsed, option+t to expand)");
+  });
+
+  it("prefixes assistant replies with a bullet once", () => {
+    expect(prefixAssistantReply("hello")).toBe("● hello");
+    expect(prefixAssistantReply("● already")).toBe("● already");
+    expect(prefixAssistantReply("   ")).toBe("   ");
   });
 
   it("upgrades the hidden-mode label with latest stats", () => {

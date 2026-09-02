@@ -2,6 +2,23 @@ import { wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export const THINKING_TAIL_LINES = 3;
 
+export const REPLY_BULLET = "● ";
+export const REPLY_INDENT = "  ";
+
+export const indentToReply = (text: string): string =>
+  text
+    .split("\n")
+    .map((line) => `${REPLY_INDENT}${line}`)
+    .join("\n");
+
+export const prefixAssistantReply = (markdown: string): string => {
+  const trimmed = markdown.trim();
+  if (trimmed.length === 0 || trimmed.startsWith("●")) {
+    return markdown;
+  }
+  return `${REPLY_BULLET}${markdown.trimStart()}`;
+};
+
 export const THINKING_TICK_MS_FULL = 80;
 
 export const SPINNER_FRAMES = [
@@ -61,14 +78,14 @@ export const formatCompletedLine = (input: {
       ? ""
       : ` for ${Math.round(input.elapsedMs / 1000)}s`;
   if (input.toolSummary !== undefined && input.toolSummary.length > 0) {
-    let line = `● Thought${duration}, ${input.toolSummary}`;
+    let line = `Thought${duration}, ${input.toolSummary}`;
     if (input.highlight !== undefined && input.highlight.length > 0) {
       line += `\n  L Loaded ${input.highlight}`;
     }
     return line;
   }
   const shortcut = formatShortcutLabel(input.shortcut, input.platform);
-  return `● Thought${duration} (${input.lines} lines collapsed, ${shortcut} to expand)`;
+  return `Thought${duration} (${input.lines} lines collapsed, ${shortcut} to expand)`;
 };
 
 export const formatHiddenLabel = (input: {
