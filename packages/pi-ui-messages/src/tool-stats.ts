@@ -56,9 +56,7 @@ const classify = (
   return "skip";
 };
 
-const classifyBash = (
-  command: string
-): "list" | "pattern" | "shell" => {
+const classifyBash = (command: string): "list" | "pattern" | "shell" => {
   const head = bashHead(command);
   if (head === "grep" || head === "rg" || head === "find") {
     return "pattern";
