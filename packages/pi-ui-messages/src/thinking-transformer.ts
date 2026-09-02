@@ -47,6 +47,7 @@ export const transformThinking = (
 
   return indentToReply(
     formatCompletedLine({
+      availableWidth: input.availableWidth,
       elapsedMs: input.elapsedMs,
       highlight: input.highlight,
       lines,

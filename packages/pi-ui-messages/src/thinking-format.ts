@@ -1,4 +1,4 @@
-import { wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import { visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export const THINKING_TAIL_LINES = 3;
 
@@ -65,7 +65,40 @@ export const formatStreamingHeader = (input: {
   return `${spinnerIcon(input.frame)} Thinking · ${seconds}s (${input.lines} lines, ${shortcut} to expand)`;
 };
 
+const LOADED_LABEL = "  L Loaded ";
+
+const chunkPath = (text: string, width: number): string[] => {
+  const limit = Math.max(1, width);
+  const wrapped = wrapTextWithAnsi(text, limit);
+  if (
+    wrapped.length > 0 &&
+    wrapped.every((line) => visibleWidth(line) <= limit)
+  ) {
+    return wrapped;
+  }
+  const chunks: string[] = [];
+  let rest = text;
+  while (rest.length > 0) {
+    chunks.push(rest.slice(0, limit));
+    rest = rest.slice(limit);
+  }
+  return chunks.length > 0 ? chunks : [text];
+};
+
+const formatLoadedLines = (highlight: string, availableWidth: number): string => {
+  const hang = " ".repeat(LOADED_LABEL.length);
+  const budget = Math.max(1, availableWidth - REPLY_INDENT.length - LOADED_LABEL.length);
+  const chunks = chunkPath(highlight, budget);
+  const [first, ...rest] = chunks;
+  const lines = [`${LOADED_LABEL}${first ?? highlight}`];
+  for (const chunk of rest) {
+    lines.push(`${hang}${chunk}`);
+  }
+  return lines.join("\n");
+};
+
 export const formatCompletedLine = (input: {
+  availableWidth?: number;
   elapsedMs: number | undefined;
   highlight?: string;
   lines: number;
@@ -80,7 +113,7 @@ export const formatCompletedLine = (input: {
   if (input.toolSummary !== undefined && input.toolSummary.length > 0) {
     let line = `Thought${duration}, ${input.toolSummary}`;
     if (input.highlight !== undefined && input.highlight.length > 0) {
-      line += `\n  L Loaded ${input.highlight}`;
+      line += `\n${formatLoadedLines(input.highlight, input.availableWidth ?? 80)}`;
     }
     return line;
   }

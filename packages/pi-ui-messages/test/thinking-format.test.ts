@@ -50,6 +50,27 @@ describe("thinking presentation copy", () => {
     );
   });
 
+  it("wraps a long Loaded path under the Loaded label", () => {
+    const highlight =
+      "/Users/simon/Documents/simon/github/pi-harness-kit/packages/pi-ui-messages/test/extension.test.ts";
+    const output = formatCompletedLine({
+      availableWidth: 42,
+      elapsedMs: 4000,
+      highlight,
+      lines: 1,
+      platform: "linux",
+      shortcut: "alt+t",
+      toolSummary: "read 1 file, edited 2 files",
+    });
+    const lines = output.split("\n");
+    expect(lines[0]).toBe("Thought for 4s, read 1 file, edited 2 files");
+    expect(lines[1]?.startsWith("  L Loaded ")).toBe(true);
+    expect(lines.length).toBeGreaterThan(2);
+    for (const line of lines.slice(2)) {
+      expect(line.startsWith("           ")).toBe(true);
+    }
+  });
+
   it("omits fabricated duration on completed historical thinking", () => {
     expect(
       formatCompletedLine({
