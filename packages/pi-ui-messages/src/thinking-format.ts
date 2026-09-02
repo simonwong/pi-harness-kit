@@ -2,8 +2,8 @@ import { visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export const THINKING_TAIL_LINES = 3;
 
-export const REPLY_BULLET = "● ";
 export const REPLY_INDENT = "  ";
+const LIST_PREFIX = /^[-*+] /;
 
 export const indentToReply = (text: string): string =>
   text
@@ -77,47 +77,36 @@ const chunkPath = (text: string, width: number): string[] => {
   return chunks.length > 0 ? chunks : [text];
 };
 
-export const prefixAssistantReply = (
-  markdown: string,
-  availableWidth = 80
-): string => {
+export const prefixAssistantReply = (markdown: string): string => {
   const trimmed = markdown.trim();
-  if (trimmed.length === 0 || trimmed.startsWith("●")) {
+  if (
+    trimmed.length === 0 ||
+    LIST_PREFIX.test(trimmed) ||
+    trimmed.startsWith("●")
+  ) {
     return markdown;
   }
-  const hang = " ".repeat(visibleWidth(REPLY_BULLET));
-  const firstBudget = Math.max(1, availableWidth - visibleWidth(REPLY_BULLET));
-  const hangBudget = Math.max(1, availableWidth - hang.length);
   const out: string[] = [];
-  let first = true;
-  let inFence = false;
+  let started = false;
   for (const raw of markdown.trimStart().split("\n")) {
-    if (raw.startsWith("```")) {
-      inFence = !inFence;
-      if (first) {
-        out.push(REPLY_BULLET.trimEnd());
-        first = false;
+    if (!started) {
+      if (raw.length === 0) {
+        continue;
       }
-      out.push(`${hang}${raw}`);
+      if (raw.startsWith("```")) {
+        out.push("-");
+        out.push(`  ${raw}`);
+      } else {
+        out.push(`- ${raw}`);
+      }
+      started = true;
       continue;
     }
     if (raw.length === 0) {
       out.push("");
       continue;
     }
-    if (inFence) {
-      out.push(`${hang}${raw}`);
-      continue;
-    }
-    const chunks = chunkPath(raw, first ? firstBudget : hangBudget);
-    for (const chunk of chunks) {
-      if (first) {
-        out.push(`${REPLY_BULLET}${chunk}`);
-        first = false;
-        continue;
-      }
-      out.push(`${hang}${chunk}`);
-    }
+    out.push(`  ${raw}`);
   }
   return out.join("\n");
 };

@@ -457,7 +457,7 @@ describe("createMessagesExtension", () => {
         isStreaming: false,
         messageType: "assistant",
       })
-    ).toBe("● hello");
+    ).toBe("- hello");
     expect(
       recording.transformers[0]?.("hello", {
         availableWidth: 80,

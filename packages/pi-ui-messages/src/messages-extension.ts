@@ -359,7 +359,7 @@ export const createMessagesExtension =
         return markdown;
       }
       if (transformContext.messageType === "assistant") {
-        return prefixAssistantReply(markdown, transformContext.availableWidth);
+        return prefixAssistantReply(markdown);
       }
       if (!active || transformContext.messageType !== "assistant-thinking") {
         return markdown;

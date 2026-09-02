@@ -115,26 +115,22 @@ describe("thinking presentation copy", () => {
   });
 
   it("prefixes assistant replies with a bullet once", () => {
-    expect(prefixAssistantReply("hello")).toBe("● hello");
-    expect(prefixAssistantReply("● already")).toBe("● already");
+    expect(prefixAssistantReply("hello")).toBe("- hello");
+    expect(prefixAssistantReply("- already")).toBe("- already");
     expect(prefixAssistantReply("   ")).toBe("   ");
   });
 
-  it("indents fenced code instead of prefixing the fence with a bullet", () => {
-    expect(prefixAssistantReply("```text\nfoo\n```", 80)).toBe(
-      ["●", "  ```text", "  foo", "  ```"].join("\n")
+  it("puts fenced code inside the list item so Pi indents the block", () => {
+    expect(prefixAssistantReply("```text\nfoo\n```")).toBe(
+      ["-", "  ```text", "  foo", "  ```"].join("\n")
+    );
+    expect(prefixAssistantReply("```\nfoo\n```")).toBe(
+      ["-", "  ```", "  foo", "  ```"].join("\n")
     );
   });
 
-  it("hangs wrapped reply lines under the text after the bullet", () => {
-    expect(prefixAssistantReply("hello\nworld", 80)).toBe("● hello\n  world");
-    const wrapped = prefixAssistantReply("abcdefghijabcdefghij", 12);
-    const lines = wrapped.split("\n");
-    expect(lines[0]?.startsWith("● ")).toBe(true);
-    expect(lines.length).toBeGreaterThan(1);
-    for (const line of lines.slice(1)) {
-      expect(line.startsWith("  ")).toBe(true);
-    }
+  it("hangs following reply lines under the list item", () => {
+    expect(prefixAssistantReply("hello\nworld")).toBe("- hello\n  world");
   });
 
   it("upgrades the hidden-mode label with latest stats", () => {
