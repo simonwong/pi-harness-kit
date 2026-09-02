@@ -94,8 +94,11 @@ export const prefixAssistantReply = (
   for (const raw of markdown.trimStart().split("\n")) {
     if (raw.startsWith("```")) {
       inFence = !inFence;
-      out.push(first ? `${REPLY_BULLET}${raw}` : `${hang}${raw}`);
-      first = false;
+      if (first) {
+        out.push(REPLY_BULLET.trimEnd());
+        first = false;
+      }
+      out.push(`${hang}${raw}`);
       continue;
     }
     if (raw.length === 0) {

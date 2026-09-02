@@ -120,6 +120,12 @@ describe("thinking presentation copy", () => {
     expect(prefixAssistantReply("   ")).toBe("   ");
   });
 
+  it("indents fenced code instead of prefixing the fence with a bullet", () => {
+    expect(prefixAssistantReply("```text\nfoo\n```", 80)).toBe(
+      ["●", "  ```text", "  foo", "  ```"].join("\n")
+    );
+  });
+
   it("hangs wrapped reply lines under the text after the bullet", () => {
     expect(prefixAssistantReply("hello\nworld", 80)).toBe("● hello\n  world");
     const wrapped = prefixAssistantReply("abcdefghijabcdefghij", 12);
