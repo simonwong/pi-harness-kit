@@ -4,7 +4,6 @@ export const THINKING_TAIL_LINES = 3;
 
 export const REPLY_BULLET = "● ";
 export const REPLY_INDENT = "  ";
-const LIST_PREFIX = /^[-*+] /;
 const NBSP = "\u00A0";
 const HANG = `${NBSP}${NBSP}`;
 
@@ -85,11 +84,7 @@ export const prefixAssistantReply = (
   availableWidth = 80
 ): string => {
   const trimmed = markdown.trim();
-  if (
-    trimmed.length === 0 ||
-    LIST_PREFIX.test(trimmed) ||
-    trimmed.startsWith("●")
-  ) {
+  if (trimmed.length === 0 || trimmed.startsWith("●")) {
     return markdown;
   }
   const budget = Math.max(1, availableWidth - visibleWidth(REPLY_BULLET));

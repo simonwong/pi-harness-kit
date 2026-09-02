@@ -116,7 +116,7 @@ describe("thinking presentation copy", () => {
 
   it("prefixes assistant replies with a bullet once", () => {
     expect(prefixAssistantReply("hello")).toBe("● hello");
-    expect(prefixAssistantReply("- already")).toBe("- already");
+    expect(prefixAssistantReply("- already")).toBe("● - already");
     expect(prefixAssistantReply("   ")).toBe("   ");
   });
 
