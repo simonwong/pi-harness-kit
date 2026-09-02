@@ -2,8 +2,11 @@ import { visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export const THINKING_TAIL_LINES = 3;
 
+export const REPLY_BULLET = "● ";
 export const REPLY_INDENT = "  ";
 const LIST_PREFIX = /^[-*+] /;
+const NBSP = "\u00A0";
+const HANG = `${NBSP}${NBSP}`;
 
 export const indentToReply = (text: string): string =>
   text
@@ -77,7 +80,10 @@ const chunkPath = (text: string, width: number): string[] => {
   return chunks.length > 0 ? chunks : [text];
 };
 
-export const prefixAssistantReply = (markdown: string): string => {
+export const prefixAssistantReply = (
+  markdown: string,
+  availableWidth = 80
+): string => {
   const trimmed = markdown.trim();
   if (
     trimmed.length === 0 ||
@@ -86,29 +92,47 @@ export const prefixAssistantReply = (markdown: string): string => {
   ) {
     return markdown;
   }
+  const budget = Math.max(1, availableWidth - visibleWidth(REPLY_BULLET));
   const out: string[] = [];
-  let started = false;
+  let first = true;
+  let inFence = false;
   for (const raw of markdown.trimStart().split("\n")) {
-    if (!started) {
-      if (raw.length === 0) {
-        continue;
+    if (raw.trimStart().startsWith("```")) {
+      inFence = !inFence;
+      if (first) {
+        out.push(REPLY_BULLET.trimEnd());
+        first = false;
       }
-      if (raw.startsWith("```")) {
-        out.push("-");
-        out.push(`  ${raw}`);
-      } else {
-        out.push(`- ${raw}`);
-      }
-      started = true;
+      out.push(`${HANG}${raw.trimStart()}`);
       continue;
     }
     if (raw.length === 0) {
       out.push("");
       continue;
     }
-    out.push(`  ${raw}`);
+    if (inFence) {
+      out.push(`${HANG}${raw}`);
+      continue;
+    }
+    const chunks = chunkPath(raw, budget);
+    for (const chunk of chunks) {
+      if (first) {
+        out.push(`${REPLY_BULLET}${chunk}`);
+        first = false;
+        continue;
+      }
+      out.push(`${HANG}${chunk}`);
+    }
   }
-  return out.join("\n");
+  return out
+    .map((line, index, lines) => {
+      const next = lines[index + 1];
+      if (next === undefined || line.length === 0 || next.length === 0) {
+        return line;
+      }
+      return line.endsWith("  ") ? line : `${line}  `;
+    })
+    .join("\n");
 };
 
 const formatLoadedLines = (

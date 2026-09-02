@@ -115,22 +115,22 @@ describe("thinking presentation copy", () => {
   });
 
   it("prefixes assistant replies with a bullet once", () => {
-    expect(prefixAssistantReply("hello")).toBe("- hello");
+    expect(prefixAssistantReply("hello")).toBe("● hello");
     expect(prefixAssistantReply("- already")).toBe("- already");
     expect(prefixAssistantReply("   ")).toBe("   ");
   });
 
-  it("puts fenced code inside the list item so Pi indents the block", () => {
-    expect(prefixAssistantReply("```text\nfoo\n```")).toBe(
-      ["-", "  ```text", "  foo", "  ```"].join("\n")
-    );
-    expect(prefixAssistantReply("```\nfoo\n```")).toBe(
-      ["-", "  ```", "  foo", "  ```"].join("\n")
+  it("hangs following reply lines under the bullet text", () => {
+    expect(prefixAssistantReply("hello\nworld")).toBe(
+      "● hello  \n\u00A0\u00A0world"
     );
   });
 
-  it("hangs following reply lines under the list item", () => {
-    expect(prefixAssistantReply("hello\nworld")).toBe("- hello\n  world");
+  it("indents fences so they are not flush-left code tokens", () => {
+    const output = prefixAssistantReply("```text\nfoo\n```");
+    expect(output.startsWith("●")).toBe(true);
+    expect(output).toContain("\u00A0\u00A0```text");
+    expect(output).toContain("\u00A0\u00A0foo");
   });
 
   it("upgrades the hidden-mode label with latest stats", () => {
