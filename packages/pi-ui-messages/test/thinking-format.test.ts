@@ -120,6 +120,17 @@ describe("thinking presentation copy", () => {
     expect(prefixAssistantReply("   ")).toBe("   ");
   });
 
+  it("hangs wrapped reply lines under the text after the bullet", () => {
+    expect(prefixAssistantReply("hello\nworld", 80)).toBe("● hello\n  world");
+    const wrapped = prefixAssistantReply("abcdefghijabcdefghij", 12);
+    const lines = wrapped.split("\n");
+    expect(lines[0]?.startsWith("● ")).toBe(true);
+    expect(lines.length).toBeGreaterThan(1);
+    for (const line of lines.slice(1)) {
+      expect(line.startsWith("  ")).toBe(true);
+    }
+  });
+
   it("upgrades the hidden-mode label with latest stats", () => {
     expect(formatHiddenLabel({ elapsedMs: 5000, lines: 60 })).toBe(
       "Thinking · 5s · 60 lines (ctrl+t to show)"

@@ -11,14 +11,6 @@ export const indentToReply = (text: string): string =>
     .map((line) => `${REPLY_INDENT}${line}`)
     .join("\n");
 
-export const prefixAssistantReply = (markdown: string): string => {
-  const trimmed = markdown.trim();
-  if (trimmed.length === 0 || trimmed.startsWith("●")) {
-    return markdown;
-  }
-  return `${REPLY_BULLET}${markdown.trimStart()}`;
-};
-
 export const THINKING_TICK_MS_FULL = 80;
 
 export const SPINNER_FRAMES = [
@@ -83,6 +75,48 @@ const chunkPath = (text: string, width: number): string[] => {
     rest = rest.slice(limit);
   }
   return chunks.length > 0 ? chunks : [text];
+};
+
+export const prefixAssistantReply = (
+  markdown: string,
+  availableWidth = 80
+): string => {
+  const trimmed = markdown.trim();
+  if (trimmed.length === 0 || trimmed.startsWith("●")) {
+    return markdown;
+  }
+  const hang = " ".repeat(visibleWidth(REPLY_BULLET));
+  const firstBudget = Math.max(1, availableWidth - visibleWidth(REPLY_BULLET));
+  const hangBudget = Math.max(1, availableWidth - hang.length);
+  const out: string[] = [];
+  let first = true;
+  let inFence = false;
+  for (const raw of markdown.trimStart().split("\n")) {
+    if (raw.startsWith("```")) {
+      inFence = !inFence;
+      out.push(first ? `${REPLY_BULLET}${raw}` : `${hang}${raw}`);
+      first = false;
+      continue;
+    }
+    if (raw.length === 0) {
+      out.push("");
+      continue;
+    }
+    if (inFence) {
+      out.push(`${hang}${raw}`);
+      continue;
+    }
+    const chunks = chunkPath(raw, first ? firstBudget : hangBudget);
+    for (const chunk of chunks) {
+      if (first) {
+        out.push(`${REPLY_BULLET}${chunk}`);
+        first = false;
+        continue;
+      }
+      out.push(`${hang}${chunk}`);
+    }
+  }
+  return out.join("\n");
 };
 
 const formatLoadedLines = (
