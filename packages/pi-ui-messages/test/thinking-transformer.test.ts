@@ -41,7 +41,7 @@ describe("thinking transformer", () => {
         platform: "linux",
         shortcut: "alt+t",
       })
-    ).toBe("Thought for 5s (4 lines collapsed, alt+t to expand)");
+    ).toBe("● Thought for 5s (4 lines collapsed, alt+t to expand)");
   });
 
   it("counts trimmed lines so a trailing newline does not inflate the summary", () => {
@@ -55,7 +55,7 @@ describe("thinking transformer", () => {
         platform: "linux",
         shortcut: "alt+t",
       })
-    ).toBe("Thought for 1s (4 lines collapsed, alt+t to expand)");
+    ).toBe("● Thought for 1s (4 lines collapsed, alt+t to expand)");
   });
 
   it("passes thinking through when expanded", () => {

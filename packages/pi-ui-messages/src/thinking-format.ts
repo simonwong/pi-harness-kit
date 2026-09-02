@@ -61,14 +61,14 @@ export const formatCompletedLine = (input: {
       ? ""
       : ` for ${Math.round(input.elapsedMs / 1000)}s`;
   if (input.toolSummary !== undefined && input.toolSummary.length > 0) {
-    let line = `Thought${duration}, ${input.toolSummary}`;
+    let line = `● Thought${duration}, ${input.toolSummary}`;
     if (input.highlight !== undefined && input.highlight.length > 0) {
       line += `\n  L Loaded ${input.highlight}`;
     }
     return line;
   }
   const shortcut = formatShortcutLabel(input.shortcut, input.platform);
-  return `Thought${duration} (${input.lines} lines collapsed, ${shortcut} to expand)`;
+  return `● Thought${duration} (${input.lines} lines collapsed, ${shortcut} to expand)`;
 };
 
 export const formatHiddenLabel = (input: {

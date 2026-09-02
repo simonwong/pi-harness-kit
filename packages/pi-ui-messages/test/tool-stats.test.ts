@@ -16,15 +16,15 @@ describe("tool stats", () => {
       { args: { path: "x.ts" }, name: "edit" },
     ]);
     expect(formatToolStats(stats)).toBe(
-      "searched for 2 patterns, read 1 file, listed 1 directory, ran 1 shell command"
+      "searched for 2 patterns, read 1 file, listed 1 directory, edited 1 file, ran 1 shell command"
     );
-    expect(stats.highlight).toBe("packages/CLAUDE.md");
+    expect(stats.highlight).toBe("x.ts");
   });
 
-  it("folds read/bash and keeps edit/write visible", () => {
+  it("folds edit and write with the other builtins", () => {
     expect(shouldFoldTool("read")).toBe(true);
     expect(shouldFoldTool("bash")).toBe(true);
-    expect(shouldFoldTool("edit")).toBe(false);
-    expect(shouldFoldTool("write")).toBe(false);
+    expect(shouldFoldTool("edit")).toBe(true);
+    expect(shouldFoldTool("write")).toBe(true);
   });
 });

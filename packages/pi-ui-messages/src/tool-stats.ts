@@ -4,11 +4,13 @@ export interface ToolCallFact {
 }
 
 export interface ToolStats {
+  edits: number;
   files: number;
   highlight?: string;
   lists: number;
   patterns: number;
   shells: number;
+  writes: number;
 }
 
 const COMMAND_HEAD = /\s+/;
@@ -27,13 +29,12 @@ const bashHead = (command: string): string => {
   return parts.at(-1) ?? head;
 };
 
-export const shouldFoldTool = (name: string): boolean =>
-  name !== "edit" && name !== "write";
+export const shouldFoldTool = (_name: string): boolean => true;
 
 const classify = (
   name: string,
   args: Record<string, unknown>
-): "file" | "list" | "pattern" | "shell" | "skip" => {
+): "edit" | "file" | "list" | "pattern" | "shell" | "skip" | "write" => {
   if (name === "read") {
     return "file";
   }
@@ -43,8 +44,11 @@ const classify = (
   if (name === "grep" || name === "find") {
     return "pattern";
   }
-  if (name === "edit" || name === "write") {
-    return "skip";
+  if (name === "edit") {
+    return "edit";
+  }
+  if (name === "write") {
+    return "write";
   }
   if (name === "bash") {
     const head = bashHead(textArg(args, "command"));
@@ -64,17 +68,29 @@ const classify = (
 
 export const countTools = (calls: readonly ToolCallFact[]): ToolStats => {
   const stats: ToolStats = {
+    edits: 0,
     files: 0,
     lists: 0,
     patterns: 0,
     shells: 0,
+    writes: 0,
   };
   for (const call of calls) {
     const args = isRecord(call.args) ? call.args : {};
     const bucket = classify(call.name, args);
+    const path = textArg(args, "path");
     if (bucket === "file") {
       stats.files += 1;
-      const path = textArg(args, "path");
+      if (path.length > 0) {
+        stats.highlight = path;
+      }
+    } else if (bucket === "edit") {
+      stats.edits += 1;
+      if (path.length > 0) {
+        stats.highlight = path;
+      }
+    } else if (bucket === "write") {
+      stats.writes += 1;
       if (path.length > 0) {
         stats.highlight = path;
       }
@@ -103,6 +119,12 @@ export const formatToolStats = (stats: ToolStats): string => {
   if (stats.lists > 0) {
     parts.push(`listed ${phrase(stats.lists, "directory", "directories")}`);
   }
+  if (stats.edits > 0) {
+    parts.push(`edited ${phrase(stats.edits, "file", "files")}`);
+  }
+  if (stats.writes > 0) {
+    parts.push(`wrote ${phrase(stats.writes, "file", "files")}`);
+  }
   if (stats.shells > 0) {
     parts.push(
       `ran ${phrase(stats.shells, "shell command", "shell commands")}`
@@ -115,10 +137,12 @@ export const hasToolStats = (
   stats: ToolStats | undefined
 ): stats is ToolStats =>
   stats !== undefined &&
-  (stats.files > 0 ||
+  (stats.edits > 0 ||
+    stats.files > 0 ||
     stats.lists > 0 ||
     stats.patterns > 0 ||
-    stats.shells > 0);
+    stats.shells > 0 ||
+    stats.writes > 0);
 
 export const extractToolCalls = (content: unknown): ToolCallFact[] => {
   if (!Array.isArray(content)) {

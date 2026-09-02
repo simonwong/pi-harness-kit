@@ -205,7 +205,7 @@ describe("createMessagesExtension", () => {
         isStreaming: true,
         messageType: "assistant-thinking",
       })
-    ).toBe("Thought for 3s (4 lines collapsed, alt+t to expand)");
+    ).toBe("● Thought for 3s (4 lines collapsed, alt+t to expand)");
 
     clock.now = 6000;
     await recording.emit(
@@ -228,7 +228,7 @@ describe("createMessagesExtension", () => {
         isStreaming: false,
         messageType: "assistant-thinking",
       })
-    ).toBe("Thought for 3s (4 lines collapsed, alt+t to expand)");
+    ).toBe("● Thought for 3s (4 lines collapsed, alt+t to expand)");
   });
 
   it("expands through the registered shortcut and restores compact form", async () => {
@@ -261,7 +261,7 @@ describe("createMessagesExtension", () => {
         isStreaming: false,
         messageType: "assistant-thinking",
       })
-    ).toBe("Thought (4 lines collapsed, alt+t to expand)");
+    ).toBe("● Thought (4 lines collapsed, alt+t to expand)");
   });
 
   it("restores persisted durations from the session branch", async () => {
@@ -290,7 +290,7 @@ describe("createMessagesExtension", () => {
         isStreaming: false,
         messageType: "assistant-thinking",
       })
-    ).toBe("Thought for 12s (4 lines collapsed, alt+t to expand)");
+    ).toBe("● Thought for 12s (4 lines collapsed, alt+t to expand)");
   });
 
   it("redraws the thinking header on the 80ms loop while text stays the last three lines", async () => {
