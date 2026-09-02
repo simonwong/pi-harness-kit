@@ -85,9 +85,15 @@ const chunkPath = (text: string, width: number): string[] => {
   return chunks.length > 0 ? chunks : [text];
 };
 
-const formatLoadedLines = (highlight: string, availableWidth: number): string => {
+const formatLoadedLines = (
+  highlight: string,
+  availableWidth: number
+): string => {
   const hang = " ".repeat(LOADED_LABEL.length);
-  const budget = Math.max(1, availableWidth - REPLY_INDENT.length - LOADED_LABEL.length);
+  const budget = Math.max(
+    1,
+    availableWidth - REPLY_INDENT.length - LOADED_LABEL.length
+  );
   const chunks = chunkPath(highlight, budget);
   const [first, ...rest] = chunks;
   const lines = [`${LOADED_LABEL}${first ?? highlight}`];
