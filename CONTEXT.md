@@ -25,8 +25,24 @@ The Interface Zone where a user organizes and submits intent to pi.
 _Avoid_: Input box, editor package
 
 **Transcript**:
-The Interface Zone containing the durable, recoverable record of user messages, assistant responses, thinking, and tool activity.
+The Interface Zone containing the durable, recoverable record of user messages, Assistant Replies, Work Traces, and their evidence.
 _Avoid_: Message list, chat cards
+
+**Assistant Reply**:
+The user-visible text authored by the model; it excludes thinking and Tool Activity.
+_Avoid_: Output, tool output, response content
+
+**Work Trace**:
+The ordered thinking and Tool Activity between a user message or Assistant Reply and the next Assistant Reply. It may be summarized, but its original evidence remains recoverable.
+_Avoid_: Thought, tool group, message output
+
+**Thought Summary**:
+The collapsed aggregate presentation of one Work Trace, including cumulative thinking duration and Tool Activity facts.
+_Avoid_: Thinking block, per-tool card, response summary
+
+**Tool Activity**:
+One tool invocation and its progress, result, or failure evidence inside a Work Trace.
+_Avoid_: Tool card, tool output
 
 **Activity**:
 The Interface Zone communicating truthful, transient state about work currently in progress.
