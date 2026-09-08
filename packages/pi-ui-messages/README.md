@@ -1,16 +1,25 @@
 # pi-ui-messages
 
-Private local-v1 package for the Pi UI Messages Surface. Its first Capability compactly presents model thinking in the TUI without changing stored session or export content.
+Private local-v1 package for the Pi UI Messages Surface. It folds multi-step thinking and suite-controlled builtin tool evidence in place without changing stored assistant/tool content.
 
-## Compact Thinking
+## Work Trace
 
-Compact Thinking is enabled with zero configuration in Pi TUI mode.
+Compact Thinking and Tool Cards combine into a first-thinking anchored Work Trace in Pi TUI mode.
 
-- While thinking streams, the header `⠋ Thinking · 17s (56 lines, alt+t to expand)` redraws every 80ms (Pi Loader cadence). The three lines below are the latest wrapped rows and only change when thinking text arrives.
-- After the run ends, the block collapses to `Thought for 5s (60 lines collapsed, alt+t to expand)`.
-- `alt+t` toggles compact form and the original thinking text (shown as `option+t` on macOS, `alt+t` on Windows/Linux). `/compact-thinking` does the same if the shortcut cannot be registered. `ctrl+t` keeps Pi's native hide/show.
-- Durations persist as custom session entries and restore on session start and tree navigation. After a restore miss, the line still reports line count and omits duration rather than inventing one.
-- Stored messages, `/export`, `/share`, and session jsonl stay full thinking text.
+- While the first thinking block streams, `⠋ Thinking · 17s (56 lines, alt+t to expand)` redraws every 100ms and shows the latest three wrapped rows.
+- When later thinking follows tool use, the first block becomes the cumulative `Thought` summary and later thinking blocks stay hidden.
+- Observed builtin and third-party calls contribute to the cumulative tool count.
+- The seven builtins (`read`, `bash`, `edit`, `write`, `grep`, `find`, `ls`) fold only when `getAllTools()` still reports `source: builtin`. A pure-tool trace stays native because it has no Thought anchor.
+- `alt+t` toggles compact form and restores original thinking plus complete builtin call/result evidence in its original Transcript positions. `/compact-thinking` does the same. `ctrl+t` keeps Pi's native thinking hide/show.
+- Third-party, Todo, Subagent, and already-overridden tool renderers are best-effort: calls count toward the summary, but native UI remains when Pi exposes no safe renderer seam.
+- Duration and trace metadata persist as custom session entries and restore on session start and tree navigation. Version 2 trace records identify thinking by message timestamp and content position, including consecutive blocks rendered together. Legacy version 1 records and history without identity metadata keep per-block thinking and native tool evidence.
+- Stored messages, tool definitions, execution, model context, `/export`, `/share`, and session jsonl content stay unchanged.
+
+On Pi 0.84.2, an isolated, guarded Transcript adapter associates native Markdown components with their message positions and folds the complete builtin component, including inline images. It changes only instance rendering and restores it on shutdown; no shared prototype is patched. If the host shape is unsupported, or Pi's native `ctrl+t` hides the Thought anchor, tools remain visible. Recheck the host-component tests and Ghostty smoke when upgrading Pi.
+
+Standalone Tool Cards display an explicit `failed` marker for errors. Native renderer components remain separate from compact rows, so expansion preserves wrapped output, diffs, and native result state.
+
+Assistant Reply bullets preserve structured Markdown. Headings, lists, links, emphasis, and fenced code are not pre-wrapped or indented.
 
 ## Configuration
 
@@ -31,14 +40,18 @@ Project configuration is read only when Pi trusts the project. Changes take effe
     "compactThinking": {
       "enabled": true,
       "shortcut": "alt+t"
+    },
+    "toolCards": {
+      "enabled": true
     }
   }
 }
 ```
 
 - `enabled: false` is the Global Native Escape Hatch and cannot be undone by project configuration.
-- `messages.compactThinking.enabled: false` disables only Compact Thinking.
-- `messages.compactThinking.shortcut` overrides the expand/collapse key.
+- `messages.compactThinking.enabled: false` disables Work Trace thinking grouping.
+- `messages.compactThinking.shortcut` overrides the in-place expand/collapse key.
+- `messages.toolCards.enabled: false` leaves all tool renderers native while retaining Compact Thinking. When Tool Cards is enabled alone, builtin calls use standalone compact rows and Pi's native expand control restores full evidence.
 - Missing files select defaults without a diagnostic.
 - Invalid JSON, version, or Messages root keeps Messages native and reports once. An invalid Compact Thinking section disables only Compact Thinking.
 - RPC, JSON, and print modes always behave natively.

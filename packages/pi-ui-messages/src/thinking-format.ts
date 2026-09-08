@@ -1,8 +1,17 @@
-import { wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import { visibleWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 
 export const THINKING_TAIL_LINES = 3;
 
-export const THINKING_TICK_MS_FULL = 80;
+export const REPLY_BULLET = "● ";
+export const REPLY_INDENT = "  ";
+
+export const indentToReply = (text: string): string =>
+  text
+    .split("\n")
+    .map((line) => `${REPLY_INDENT}${line}`)
+    .join("\n");
+
+export const THINKING_TICK_MS_FULL = 100;
 
 export const SPINNER_FRAMES = [
   "⠋",
@@ -48,16 +57,80 @@ export const formatStreamingHeader = (input: {
   return `${spinnerIcon(input.frame)} Thinking · ${seconds}s (${input.lines} lines, ${shortcut} to expand)`;
 };
 
+const LOADED_LABEL = "  L Loaded ";
+
+const chunkPath = (text: string, width: number): string[] => {
+  const limit = Math.max(1, width);
+  const wrapped = wrapTextWithAnsi(text, limit);
+  if (
+    wrapped.length > 0 &&
+    wrapped.every((line) => visibleWidth(line) <= limit)
+  ) {
+    return wrapped;
+  }
+  const chunks: string[] = [];
+  let rest = text;
+  while (rest.length > 0) {
+    chunks.push(rest.slice(0, limit));
+    rest = rest.slice(limit);
+  }
+  return chunks.length > 0 ? chunks : [text];
+};
+
+const STRUCTURED_MARKDOWN = /^(?:\s*)(?:```|~~~|#{1,6}\s|>|[-+*]\s|\d+[.)]\s)/m;
+
+export const prefixAssistantReply = (
+  markdown: string,
+  _availableWidth = 80
+): string => {
+  const trimmed = markdown.trim();
+  if (trimmed.length === 0 || markdown.trimStart().startsWith("●")) {
+    return markdown;
+  }
+  if (STRUCTURED_MARKDOWN.test(markdown)) {
+    return `${REPLY_BULLET.trimEnd()}\n\n${markdown}`;
+  }
+  return `${REPLY_BULLET}${markdown}`;
+};
+
+const formatLoadedLines = (
+  highlight: string,
+  availableWidth: number
+): string => {
+  const hang = " ".repeat(LOADED_LABEL.length);
+  const budget = Math.max(
+    1,
+    availableWidth - REPLY_INDENT.length - LOADED_LABEL.length
+  );
+  const chunks = chunkPath(highlight, budget);
+  const [first, ...rest] = chunks;
+  const lines = [`${LOADED_LABEL}${first ?? highlight}`];
+  for (const chunk of rest) {
+    lines.push(`${hang}${chunk}`);
+  }
+  return lines.join("\n");
+};
+
 export const formatCompletedLine = (input: {
+  availableWidth?: number;
   elapsedMs: number | undefined;
+  highlight?: string;
   lines: number;
   platform?: NodeJS.Platform;
   shortcut: string;
+  toolSummary?: string;
 }): string => {
   const duration =
     input.elapsedMs === undefined
       ? ""
       : ` for ${Math.round(input.elapsedMs / 1000)}s`;
+  if (input.toolSummary !== undefined && input.toolSummary.length > 0) {
+    let line = `Thought${duration}, ${input.toolSummary}`;
+    if (input.highlight !== undefined && input.highlight.length > 0) {
+      line += `\n${formatLoadedLines(input.highlight, input.availableWidth ?? 80)}`;
+    }
+    return line;
+  }
   const shortcut = formatShortcutLabel(input.shortcut, input.platform);
   return `Thought${duration} (${input.lines} lines collapsed, ${shortcut} to expand)`;
 };

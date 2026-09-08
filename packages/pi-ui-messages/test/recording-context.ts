@@ -1,10 +1,12 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Container } from "@earendil-works/pi-tui";
 
 export interface ContextRecording {
   branch: unknown[];
   context: ExtensionContext;
   hiddenThinkingLabel: string | undefined;
   notifications: { message: string; type?: string }[];
+  transcript: Container;
   widgets: Record<string, unknown>;
 }
 
@@ -33,7 +35,10 @@ export const createRecordingContext = (
         setWidget(
           key: string,
           content:
-            | ((tui: { requestRender: (force?: boolean) => void }) => unknown)
+            | ((tui: {
+                children: Container[];
+                requestRender: (force?: boolean) => void;
+              }) => unknown)
             | string[]
             | undefined
         ) {
@@ -44,6 +49,7 @@ export const createRecordingContext = (
           recording.widgets[key] = content;
           if (typeof content === "function") {
             content({
+              children: [recording.transcript],
               requestRender() {
                 // Recording harness has no TUI frame loop.
               },
@@ -54,6 +60,7 @@ export const createRecordingContext = (
     } as unknown as ExtensionContext,
     hiddenThinkingLabel: undefined,
     notifications,
+    transcript: new Container(),
     widgets: {},
   };
   return recording;

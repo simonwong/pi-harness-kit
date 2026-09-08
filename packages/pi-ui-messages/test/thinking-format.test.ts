@@ -3,6 +3,7 @@ import {
   formatCompletedLine,
   formatHiddenLabel,
   formatStreamingHeader,
+  prefixAssistantReply,
   tailWindow,
 } from "../src/thinking-format.ts";
 
@@ -28,6 +29,46 @@ describe("thinking presentation copy", () => {
         shortcut: "alt+t",
       })
     ).toBe("Thought for 5s (60 lines collapsed, alt+t to expand)");
+  });
+
+  it("folds tool counts into the completed thinking line", () => {
+    expect(
+      formatCompletedLine({
+        elapsedMs: 24_000,
+        highlight: "CLAUDE.md",
+        lines: 12,
+        platform: "linux",
+        shortcut: "alt+t",
+        toolSummary:
+          "searched for 5 patterns, read 1 file, listed 3 directories, ran 1 shell command",
+      })
+    ).toBe(
+      [
+        "Thought for 24s, searched for 5 patterns, read 1 file, listed 3 directories, ran 1 shell command",
+        "  L Loaded CLAUDE.md",
+      ].join("\n")
+    );
+  });
+
+  it("wraps a long Loaded path under the Loaded label", () => {
+    const highlight =
+      "/Users/simon/Documents/simon/github/pi-harness-kit/packages/pi-ui-messages/test/extension.test.ts";
+    const output = formatCompletedLine({
+      availableWidth: 42,
+      elapsedMs: 4000,
+      highlight,
+      lines: 1,
+      platform: "linux",
+      shortcut: "alt+t",
+      toolSummary: "read 1 file, edited 2 files",
+    });
+    const lines = output.split("\n");
+    expect(lines[0]).toBe("Thought for 4s, read 1 file, edited 2 files");
+    expect(lines[1]?.startsWith("  L Loaded ")).toBe(true);
+    expect(lines.length).toBeGreaterThan(2);
+    for (const line of lines.slice(2)) {
+      expect(line.startsWith("           ")).toBe(true);
+    }
   });
 
   it("omits fabricated duration on completed historical thinking", () => {
@@ -71,6 +112,26 @@ describe("thinking presentation copy", () => {
         shortcut: "alt+t",
       })
     ).toBe("Thought for 5s (60 lines collapsed, option+t to expand)");
+  });
+
+  it("prefixes plain assistant replies with a bullet once", () => {
+    expect(prefixAssistantReply("hello")).toBe("● hello");
+    expect(prefixAssistantReply("hello\nworld")).toBe("● hello\nworld");
+    expect(prefixAssistantReply("   ")).toBe("   ");
+  });
+
+  it("preserves list, heading, link, emphasis, and fence Markdown", () => {
+    expect(prefixAssistantReply("- **bold** [link](https://example.com)")).toBe(
+      "●\n\n- **bold** [link](https://example.com)"
+    );
+    expect(prefixAssistantReply("### Heading\n\nText")).toBe(
+      "●\n\n### Heading\n\nText"
+    );
+    expect(prefixAssistantReply("```text\nfoo\n```")).toBe(
+      "●\n\n```text\nfoo\n```"
+    );
+    const indented = "  ```text\n  foo\n  ```";
+    expect(prefixAssistantReply(indented)).toBe(`●\n\n${indented}`);
   });
 
   it("upgrades the hidden-mode label with latest stats", () => {
