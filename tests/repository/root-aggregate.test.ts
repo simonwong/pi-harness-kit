@@ -20,7 +20,20 @@ describe("Pi UI development aggregate", () => {
         "./packages/pi-ui-messages/src/index.ts",
       ],
     });
-    expect(localSettings).toEqual({ packages: [".."] });
+    expect(Array.isArray(localSettings.packages)).toBe(true);
+    const enabledPackages = (localSettings.packages as unknown[]).filter(
+      (entry) => {
+        if (typeof entry !== "object" || entry === null) {
+          return true;
+        }
+        const selection = entry as Record<string, unknown>;
+        return !["extensions", "skills", "prompts", "themes"].every(
+          (key) => Array.isArray(selection[key]) && selection[key].length === 0
+        );
+      }
+    );
+    expect(enabledPackages).toEqual([".."]);
+    expect(localSettings.extensions ?? []).toEqual([]);
   });
 
   it.each(["pi-ui-status", "pi-ui-input", "pi-ui-messages"])(

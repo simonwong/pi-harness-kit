@@ -2,6 +2,7 @@ import {
   countSourceLines,
   formatCompletedLine,
   formatStreamingHeader,
+  indentToReply,
   THINKING_TAIL_LINES,
   tailWindow,
 } from "./thinking-format.ts";
@@ -11,9 +12,12 @@ export interface ThinkingTransformInput {
   compact: boolean;
   elapsedMs: number | undefined;
   frame: number;
+  highlight?: string;
   isStreaming: boolean;
+  lineCount?: number;
   platform?: NodeJS.Platform;
   shortcut: string;
+  toolSummary?: string;
 }
 
 export const transformThinking = (
@@ -25,7 +29,7 @@ export const transformThinking = (
     return markdown;
   }
 
-  const lines = countSourceLines(text);
+  const lines = input.lineCount ?? countSourceLines(text);
   if (input.isStreaming) {
     const header = formatStreamingHeader({
       elapsedMs: input.elapsedMs ?? 0,
@@ -34,16 +38,23 @@ export const transformThinking = (
       platform: input.platform,
       shortcut: input.shortcut,
     });
-    return [
-      header,
-      ...tailWindow(text, THINKING_TAIL_LINES, input.availableWidth),
-    ].join("\n");
+    return indentToReply(
+      [
+        header,
+        ...tailWindow(text, THINKING_TAIL_LINES, input.availableWidth),
+      ].join("\n")
+    );
   }
 
-  return formatCompletedLine({
-    elapsedMs: input.elapsedMs,
-    lines,
-    platform: input.platform,
-    shortcut: input.shortcut,
-  });
+  return indentToReply(
+    formatCompletedLine({
+      availableWidth: input.availableWidth,
+      elapsedMs: input.elapsedMs,
+      highlight: input.highlight,
+      lines,
+      platform: input.platform,
+      shortcut: input.shortcut,
+      toolSummary: input.toolSummary,
+    })
+  );
 };

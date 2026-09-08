@@ -192,6 +192,8 @@ Built-in tool cards:
 4. replace only supported render slots and shell behavior;
 5. leave third-party or already-overridden tools native.
 
+Work Trace uses the root-exported `AssistantMessageComponent` and `ToolExecutionComponent` at an isolated Pi 0.84.2 adapter in `pi-ui-messages/src/transcript-view.ts`. The adapter guards access to message identity, content containers, and tool ownership before decorating individual component instances. This internal seam is necessary because Markdown transformers have no message identity and native inline images render outside tool-result slots. Unsupported host shapes retain per-block thinking and native tool evidence. Shutdown restores instance render methods; shared prototypes remain untouched. Pi upgrades must rerun the real host-component tests and focused Ghostty smoke.
+
 ### Input
 
 Installs one composite autocomplete provider through `ctx.ui.addAutocompleteProvider()` during `session_start`. The provider gives explicit Pi UI triggers deterministic priority and delegates to the previous provider exactly once when no Pi UI syntax matches.
