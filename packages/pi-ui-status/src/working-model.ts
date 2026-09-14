@@ -13,14 +13,18 @@ export interface WorkingState {
   outputReported: boolean;
   phase: WorkingPhase;
   startedAt?: number;
+  thinkingMilliseconds: number;
+  thinkingObserved: boolean;
+  thinkingStartedAt?: number;
 }
 
 export type WorkingEvent =
   | { now: number; type: "started" }
   | { output: number; type: "assistantUpdated" }
-  | { output: number; type: "assistantEnded" }
-  | { outcome: WorkingOutcome; type: "runEnded" }
-  | { type: "settled" }
+  | { now: number; output: number; type: "assistantEnded" }
+  | { now: number; type: "thinkingStarted" | "thinkingEnded" }
+  | { now: number; outcome: WorkingOutcome; type: "runEnded" }
+  | { now: number; type: "settled" }
   | { type: "shutdown" };
 
 export interface OutcomeMessage {
@@ -34,6 +38,8 @@ export const createWorkingState = (): WorkingState => ({
   completedOutput: 0,
   outputReported: false,
   phase: "inactive",
+  thinkingMilliseconds: 0,
+  thinkingObserved: false,
 });
 
 export interface UsageTokens {
@@ -56,6 +62,25 @@ export const visibleOutputTokens = (usage: UsageTokens): number => {
   return normalizeOutput(usage.reasoning ?? 0);
 };
 
+const openThinking = (state: WorkingState, now: number): WorkingState => {
+  if (state.phase !== "active") {
+    return state;
+  }
+  return {
+    ...state,
+    thinkingObserved: true,
+    thinkingStartedAt: state.thinkingStartedAt ?? now,
+  };
+};
+
+const closeThinking = (state: WorkingState, now: number): WorkingState => ({
+  ...state,
+  thinkingMilliseconds:
+    state.thinkingMilliseconds +
+    Math.max(0, now - (state.thinkingStartedAt ?? now)),
+  thinkingStartedAt: undefined,
+});
+
 export const updateWorkingState = (
   state: WorkingState,
   event: WorkingEvent
@@ -74,6 +99,15 @@ export const updateWorkingState = (
         outcome: undefined,
         phase: "active",
       };
+    case "thinkingStarted":
+      return openThinking(state, event.now);
+    case "thinkingEnded":
+      return state.phase === "active"
+        ? {
+            ...closeThinking(state, event.now),
+            thinkingObserved: true,
+          }
+        : state;
     case "assistantUpdated": {
       if (state.phase !== "active") {
         return state;
@@ -92,7 +126,7 @@ export const updateWorkingState = (
       const finalOutput = normalizeOutput(event.output);
       const completedOutput = finalOutput || state.activeOutput;
       return {
-        ...state,
+        ...closeThinking(state, event.now),
         activeOutput: 0,
         completedOutput: state.completedOutput + completedOutput,
         outputReported: state.outputReported || completedOutput > 0,
@@ -103,7 +137,7 @@ export const updateWorkingState = (
         return state;
       }
       return {
-        ...state,
+        ...closeThinking(state, event.now),
         activeOutput: 0,
         outcome: event.outcome,
         phase: "pending",
@@ -113,7 +147,7 @@ export const updateWorkingState = (
         return state;
       }
       return {
-        ...state,
+        ...closeThinking(state, event.now),
         activeOutput: 0,
         outcome: state.outcome ?? { kind: "unknown" },
         phase: "settled",

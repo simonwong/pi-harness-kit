@@ -7,22 +7,25 @@ Private local-v1 package for the Pi UI Status Surface. Its first Capability enha
 Working is enabled with zero configuration in Pi TUI mode. During one truthful operation it shows:
 
 ```text
-<indicator> Cooking (↓ 1,284 1m 42s)
+[Pi Loader] Cooking... (1m 42s · ↓ 1,284 tokens · thought for 3s)
 ```
 
 - Full motion uses Pi's official default Working Loader and its host-owned cadence. Pi UI does not imitate or replace that animation.
 - Each operation chooses randomly from 28 whimsical verbs curated from Claude Code 2.1.233's built-in spinner table, then chooses another every ten seconds without an immediate repeat. Literal phase words such as `Thinking`, `Checking`, and `Processing` are excluded; the copy is ambient personality, not a progress claim.
-- Elapsed time uses compact English units such as `42s`, `4m 59s`, or `1h 4m 59s`. Tone uses the active theme: accent before one minute, warning through `2m 59s`, and error from three minutes.
-- Output usage is rendered as `↓ 1,284` from the exact cumulative `usage.output` reported by the provider. Until Pi receives usage, the output metric is omitted; Pi UI never estimates it from text.
+- Elapsed time uses compact English units such as `42s`, `4m 59s`, or `1h 4m 59s`. Only the verb and elapsed time change tone: theme accent before three minutes, warning from three minutes, and error from eight minutes. Parentheses, separators, token usage, and thinking duration stay muted.
+- Output usage is rendered as `↓ 1,284 tokens` from cumulative provider usage. Positive `usage.output` takes precedence; before output is reported, positive `usage.reasoning` supplies the early metric. They are never added together. Until Pi receives positive usage, the field is omitted; Pi UI never estimates it from text.
+- `thought for` appears only after a public thinking stream event. It accumulates observed thinking intervals across messages and continuation, includes an open interval, and displays at least `1s`. Message completion or operation termination closes interrupted thinking; tool execution and retry waiting do not extend it. A new operation resets it.
 - `agent_end` records only a pending low-level result. The elapsed operation spans retries, compaction, and queued continuation until `agent_settled`.
 
-After final settlement, the latest outcome remains fixed above the editor in a muted tone until the next operation or session-surface replacement:
+After final settlement, the latest outcome remains fixed above the editor until the next operation or session-surface replacement:
 
 ```text
-Worked for 4m 59s
-Cancelled after 18s
-! Error after 12s: provider request failed
+Worked for 4m 59s · done 22:50
+Cancelled after 18s · done 22:50
+! Error after 12s: provider request failed · done 22:50
 ```
+
+The completion clock captures local `HH:mm` at `agent_settled`, including midnight as `00:00`, and stays fixed. Outcomes omit token and thinking metrics. Success uses muted, cancellation warning, and errors error tone.
 
 A new operation clears the prior outcome and reuses Pi's native Working row. The persistent outcome owns no timer. Error copy uses the final public assistant `errorMessage`, strips terminal control sequences, collapses whitespace, and uses `Unknown error` only when Pi has no error information. If settlement lacks a normal assistant `stop`, explicit cancellation, or explicit error, Pi UI remains neutral and publishes no outcome instead of guessing success. Native Transcript evidence remains authoritative.
 
@@ -54,7 +57,7 @@ Project configuration is read only when Pi trusts the project. Changes take effe
 - `status.working.enabled: false` disables only Working.
 - `motion` accepts `full`, `reduced`, or `off`; layered configuration uses the most restrictive value.
 - `reduced` replaces the animated Loader with a static `●`; random activity words keep the ten-second interval.
-- `off` uses a faint static `·` and stable `Working` copy with no repeating Pi UI timer. Elapsed time can still refresh when Pi delivers provider events.
+- `off` uses a faint static `·` and stable `Working...` copy with no repeating Pi UI timer. Elapsed time can still refresh when Pi delivers provider events.
 - Missing files select defaults without a diagnostic.
 - Invalid JSON, version, or Status root keeps Status native and reports once. An invalid Working section disables only Working.
 

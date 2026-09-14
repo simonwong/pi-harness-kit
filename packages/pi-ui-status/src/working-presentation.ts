@@ -60,10 +60,10 @@ export const ACTIVITY_INTERVAL_MS = 10_000;
 const numberFormatter = new Intl.NumberFormat("en-US");
 
 export const toneForElapsed = (seconds: number): WorkingTone => {
-  if (seconds >= 180) {
+  if (seconds >= 480) {
     return "error";
   }
-  if (seconds >= 60) {
+  if (seconds >= 180) {
     return "warning";
   }
   return "accent";
@@ -122,14 +122,21 @@ export const formatWorkingMessage = (
   const tone = toneForElapsed(seconds);
   const output = state.completedOutput + state.activeOutput;
   const outputText = state.outputReported
-    ? `↓ ${numberFormatter.format(output)} `
+    ? ` · ↓ ${numberFormatter.format(output)} tokens`
+    : "";
+
+  const thinkingMilliseconds =
+    state.thinkingMilliseconds +
+    Math.max(0, now - (state.thinkingStartedAt ?? now));
+  const thinkingText = state.thinkingObserved
+    ? ` · thought for ${formatDuration(Math.max(1, thinkingMilliseconds / 1000))}`
     : "";
 
   return [
-    theme.fg(tone, motion === "off" ? "Working" : activityWord),
+    theme.fg(tone, `${motion === "off" ? "Working" : activityWord}...`),
     theme.fg("muted", " ("),
-    theme.fg("muted", outputText),
     theme.fg(tone, formatDuration(seconds)),
+    theme.fg("muted", outputText + thinkingText),
     theme.fg("muted", ")"),
   ].join("");
 };
@@ -149,17 +156,24 @@ const safeErrorMessage = (message: string | undefined): string => {
 
 export const createOutcomePresentation = (
   outcome: PresentableOutcome,
-  seconds: number
+  seconds: number,
+  settledAt: number
 ): OutcomePresentation => {
   const duration = formatDuration(seconds);
+  const date = new Date(settledAt);
+  const clock = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  const completed = ` · done ${clock}`;
   switch (outcome.kind) {
     case "done":
-      return { text: `Worked for ${duration}`, tone: "muted" };
+      return { text: `Worked for ${duration}${completed}`, tone: "muted" };
     case "cancelled":
-      return { text: `Cancelled after ${duration}`, tone: "warning" };
+      return {
+        text: `Cancelled after ${duration}${completed}`,
+        tone: "warning",
+      };
     case "error":
       return {
-        text: `! Error after ${duration}: ${safeErrorMessage(outcome.message)}`,
+        text: `! Error after ${duration}: ${safeErrorMessage(outcome.message)}${completed}`,
         tone: "error",
       };
     default:
@@ -170,8 +184,9 @@ export const createOutcomePresentation = (
 export const formatOutcome = (
   outcome: PresentableOutcome,
   seconds: number,
-  theme: WorkingTheme
+  theme: WorkingTheme,
+  settledAt: number
 ): string => {
-  const presentation = createOutcomePresentation(outcome, seconds);
+  const presentation = createOutcomePresentation(outcome, seconds, settledAt);
   return theme.fg(presentation.tone, presentation.text);
 };
