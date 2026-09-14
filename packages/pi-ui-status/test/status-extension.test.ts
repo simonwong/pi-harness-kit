@@ -14,11 +14,184 @@ const enabledConfig: StatusConfigSnapshot = {
   native: false,
 };
 
+const epochClock = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  hourCycle: "h23",
+  minute: "2-digit",
+}).format(0);
+
 const last = <Value>(values: Value[]): Value | undefined => values.at(-1);
 const visible = (value: string | undefined): string | undefined =>
   value === undefined ? undefined : stripVTControlCharacters(value);
 
 describe("Status Surface Working runtime", () => {
+  it("accumulates observed thinking across messages and continuation without counting tool time", async () => {
+    const clock = new ManualClock();
+    const recording = createRecordingPi();
+    const ui = createRecordingContext();
+    createStatusExtension({
+      clock,
+      loadConfig: async () => enabledConfig,
+      random: () => 0,
+    })(recording.api);
+    const emit = (name: string, event: object = {}) =>
+      recording.emit(name, { type: name, ...event }, ui.context);
+    const thinking = (type: string) =>
+      emit("message_update", {
+        assistantMessageEvent: { contentIndex: 0, type },
+        message: { role: "assistant", usage: { output: 0, reasoning: 40 } },
+      });
+    await emit("session_start");
+    await emit("agent_start");
+    expect(visible(last(ui.workingMessages))).toBe("Vibing... (0s)");
+    await thinking("thinking_start");
+    expect(visible(last(ui.workingMessages))).toBe(
+      "Vibing... (0s · ↓ 40 tokens · thought for 1s)"
+    );
+    clock.advance(2500);
+    await thinking("thinking_delta");
+    expect(visible(last(ui.workingMessages))).toContain("thought for 2s");
+    await thinking("thinking_end");
+    await emit("message_end", {
+      message: { role: "assistant", usage: { output: 100 } },
+    });
+    clock.advance(5000);
+    expect(visible(last(ui.workingMessages))).toContain("thought for 2s");
+    await thinking("thinking_delta");
+    clock.advance(1500);
+    await thinking("thinking_end");
+    await emit("message_end", {
+      message: { role: "assistant", usage: { output: 50 } },
+    });
+    await emit("agent_end", {
+      messages: [{ role: "assistant", stopReason: "error" }],
+    });
+    clock.advance(3000);
+    await emit("agent_start");
+    expect(visible(last(ui.workingMessages))).toBe(
+      "Honking... (12s · ↓ 150 tokens · thought for 4s)"
+    );
+    expect(ui.workingIndicators).toEqual([undefined]);
+    expect(ui.workingVisibility).toEqual([true]);
+    await emit("agent_settled");
+    await emit("agent_start");
+    expect(visible(last(ui.workingMessages))).toBe("Vibing... (0s)");
+    await emit("session_shutdown");
+    expect(clock.activeTimers()).toBe(0);
+  });
+
+  it.each(["full", "reduced", "off"] as const)(
+    "freezes interrupted thinking and keeps the %s motion contract",
+    async (motion) => {
+      const clock = new ManualClock();
+      const recording = createRecordingPi();
+      const ui = createRecordingContext();
+      createStatusExtension({
+        clock,
+        loadConfig: async () => ({ ...enabledConfig, motion }),
+        random: () => 0,
+      })(recording.api);
+      const emit = (name: string, event: object = {}) =>
+        recording.emit(name, { type: name, ...event }, ui.context);
+      await emit("session_start");
+      await emit("agent_start");
+      await emit("message_update", {
+        assistantMessageEvent: { contentIndex: 0, type: "thinking_start" },
+        message: { role: "assistant", usage: { output: 0 } },
+      });
+      clock.advance(2500);
+      await emit("message_end", {
+        message: { role: "assistant", usage: { output: 80 } },
+      });
+      clock.advance(3000);
+      await emit("message_update", {
+        assistantMessageEvent: {
+          contentIndex: 1,
+          delta: "Answer",
+          type: "text_delta",
+        },
+        message: { role: "assistant", usage: { output: 10 } },
+      });
+      expect(visible(last(ui.workingMessages))).toBe(
+        `${motion === "off" ? "Working" : "Vibing"}... (5s · ↓ 90 tokens · thought for 2s)`
+      );
+      expect(clock.activeTimers()).toBe(motion === "off" ? 0 : 1);
+      expect(ui.workingIndicators).toHaveLength(1);
+      if (motion === "full") {
+        expect(last(ui.workingIndicators)).toBeUndefined();
+      } else {
+        expect(last(ui.workingIndicators)?.frames?.map(visible)).toEqual([
+          motion === "off" ? "·" : "●",
+        ]);
+      }
+      await emit("session_shutdown");
+      const writes = ui.workingMessages.length;
+      await emit("message_update", {
+        assistantMessageEvent: { contentIndex: 0, type: "thinking_delta" },
+        message: { role: "assistant", usage: { output: 0 } },
+      });
+      clock.advance(2000);
+      expect(ui.workingMessages).toHaveLength(writes);
+      expect(clock.activeTimers()).toBe(0);
+    }
+  );
+
+  it.each(["stop", "aborted", "error"])(
+    "captures the local midnight settlement clock for %s",
+    async (stopReason) => {
+      const clock = new ManualClock();
+      clock.advance(new Date(2026, 8, 14, 23, 59, 58).getTime());
+      const recording = createRecordingPi();
+      const ui = createRecordingContext();
+      createStatusExtension({ clock, loadConfig: async () => enabledConfig })(
+        recording.api
+      );
+      await recording.emit(
+        "session_start",
+        { type: "session_start" },
+        ui.context
+      );
+      await recording.emit("agent_start", { type: "agent_start" }, ui.context);
+      clock.advance(1000);
+      await recording.emit(
+        "agent_end",
+        {
+          messages: [
+            { errorMessage: "provider failed", role: "assistant", stopReason },
+          ],
+          type: "agent_end",
+        },
+        ui.context
+      );
+      clock.advance(2000);
+      await recording.emit(
+        "agent_settled",
+        { type: "agent_settled" },
+        ui.context
+      );
+      const outcomes: Record<string, string> = {
+        aborted: "Cancelled after 3s",
+        error: "! Error after 3s: provider failed",
+        stop: "Worked for 3s",
+      };
+      const result = outcomes[stopReason];
+      const snapshot = last(ui.widgets);
+      expect(snapshot?.content?.map(visible)).toEqual([
+        ` ${result} · done 00:00`,
+      ]);
+      clock.advance(120_000);
+      expect(last(ui.widgets)).toBe(snapshot);
+      expect(clock.activeTimers()).toBe(0);
+      await recording.emit("agent_start", { type: "agent_start" }, ui.context);
+      expect(last(ui.widgets)?.content).toBeUndefined();
+      await recording.emit(
+        "session_shutdown",
+        { type: "session_shutdown" },
+        ui.context
+      );
+    }
+  );
+
   it("drives active metrics and a settled outcome through public Pi UI seams", async () => {
     const clock = new ManualClock();
     const recording = createRecordingPi();
@@ -54,7 +227,7 @@ describe("Status Surface Working runtime", () => {
 
     await recording.emit("agent_start", { type: "agent_start" }, ui.context);
     expect(clock.activeTimers()).toBe(1);
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (0s)");
+    expect(visible(last(ui.workingMessages))).toBe("Vibing... (0s)");
 
     await recording.emit(
       "message_update",
@@ -64,10 +237,14 @@ describe("Status Surface Working runtime", () => {
       },
       ui.context
     );
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (↓ 84 0s)");
+    expect(visible(last(ui.workingMessages))).toBe(
+      "Vibing... (0s · ↓ 84 tokens)"
+    );
 
     clock.advance(20_000);
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (↓ 84 20s)");
+    expect(visible(last(ui.workingMessages))).toBe(
+      "Vibing... (20s · ↓ 84 tokens)"
+    );
 
     await recording.emit(
       "message_end",
@@ -77,7 +254,9 @@ describe("Status Surface Working runtime", () => {
       },
       ui.context
     );
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (↓ 100 20s)");
+    expect(visible(last(ui.workingMessages))).toBe(
+      "Vibing... (20s · ↓ 100 tokens)"
+    );
 
     await recording.emit(
       "agent_end",
@@ -110,7 +289,9 @@ describe("Status Surface Working runtime", () => {
     expect(ui.widgets).toHaveLength(writesAfterSettlement);
 
     clock.advance(2000);
-    expect(visible(last(ui.widgets)?.content?.[0])).toBe(" Worked for 20s");
+    expect(visible(last(ui.widgets)?.content?.[0])).toBe(
+      ` Worked for 20s · done ${epochClock}`
+    );
 
     await recording.emit("agent_start", { type: "agent_start" }, ui.context);
     expect(last(ui.widgets)).toEqual({
@@ -145,7 +326,9 @@ describe("Status Surface Working runtime", () => {
       },
       ui.context
     );
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (↓ 12 0s)");
+    expect(visible(last(ui.workingMessages))).toBe(
+      "Vibing... (0s · ↓ 12 tokens)"
+    );
 
     await recording.emit(
       "message_update",
@@ -155,7 +338,9 @@ describe("Status Surface Working runtime", () => {
       },
       ui.context
     );
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (↓ 50 0s)");
+    expect(visible(last(ui.workingMessages))).toBe(
+      "Vibing... (0s · ↓ 50 tokens)"
+    );
   });
 
   it("keeps a random word for ten seconds and prevents an immediate repeat", async () => {
@@ -175,13 +360,13 @@ describe("Status Surface Working runtime", () => {
       ui.context
     );
     await recording.emit("agent_start", { type: "agent_start" }, ui.context);
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (0s)");
+    expect(visible(last(ui.workingMessages))).toBe("Vibing... (0s)");
 
     clock.advance(9999);
-    expect(visible(last(ui.workingMessages))).toBe("Vibing (9s)");
+    expect(visible(last(ui.workingMessages))).toBe("Vibing... (9s)");
 
     clock.advance(1);
-    expect(visible(last(ui.workingMessages))).toBe("Smooshing (10s)");
+    expect(visible(last(ui.workingMessages))).toBe("Smooshing... (10s)");
     expect(samples).toEqual([]);
   });
 
@@ -218,7 +403,7 @@ describe("Status Surface Working runtime", () => {
 
     await recording.emit("agent_start", { type: "agent_start" }, ui.context);
     expect(randomCalls).toBe(4);
-    expect(visible(last(ui.workingMessages))).toBe("Smooshing (30s)");
+    expect(visible(last(ui.workingMessages))).toBe("Smooshing... (30s)");
   });
 
   it("shows final cancellation and sanitized error information only after settlement", async () => {
@@ -250,7 +435,9 @@ describe("Status Surface Working runtime", () => {
       { type: "agent_settled" },
       ui.context
     );
-    expect(visible(last(ui.widgets)?.content?.[0])).toBe(" Cancelled after 0s");
+    expect(visible(last(ui.widgets)?.content?.[0])).toBe(
+      ` Cancelled after 0s · done ${epochClock}`
+    );
     expect(clock.activeTimers()).toBe(0);
 
     await recording.emit("agent_start", { type: "agent_start" }, ui.context);
@@ -276,7 +463,7 @@ describe("Status Surface Working runtime", () => {
       ui.context
     );
     expect(visible(last(ui.widgets)?.content?.[0])).toBe(
-      " ! Error after 0s: provider request failed"
+      ` ! Error after 0s: provider request failed · done ${epochClock}`
     );
     expect(clock.activeTimers()).toBe(0);
   });
@@ -431,8 +618,8 @@ describe("Status Surface Working runtime", () => {
     const second = last(ui.widgets)?.content?.[0];
 
     expect(first).not.toBe(second);
-    expect(visible(first)).toBe(" Worked for 20s");
-    expect(visible(second)).toBe(" Worked for 20s");
+    expect(visible(first)).toBe(` Worked for 20s · done ${epochClock}`);
+    expect(visible(second)).toBe(` Worked for 20s · done ${epochClock}`);
   });
 
   it("wraps the owning outcome component at every required width", async () => {

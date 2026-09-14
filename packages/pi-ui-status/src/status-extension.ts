@@ -286,7 +286,7 @@ export const createStatusExtension =
       const elapsed = Math.max(0, Math.floor((now - startedAt) / 1000));
       try {
         clearOutcome(target);
-        const presentation = createOutcomePresentation(outcome, elapsed);
+        const presentation = createOutcomePresentation(outcome, elapsed, now);
         target.outcomeVisible = true;
         target.context.ui.setWidget(
           OUTCOME_WIDGET_KEY,
@@ -441,6 +441,18 @@ export const createStatusExtension =
         output: visibleOutputTokens(event.message.usage),
         type: "assistantUpdated",
       });
+      const streamType = event.assistantMessageEvent?.type;
+      if (
+        streamType === "thinking_start" ||
+        streamType === "thinking_delta" ||
+        streamType === "thinking_end"
+      ) {
+        target.state = updateWorkingState(target.state, {
+          now: dependencies.clock.now(),
+          type:
+            streamType === "thinking_end" ? "thinkingEnded" : "thinkingStarted",
+        });
+      }
       applyActivePresentation(target);
     });
 
@@ -450,6 +462,7 @@ export const createStatusExtension =
         return;
       }
       target.state = updateWorkingState(target.state, {
+        now: dependencies.clock.now(),
         output: visibleOutputTokens(event.message.usage),
         type: "assistantEnded",
       });
@@ -462,6 +475,7 @@ export const createStatusExtension =
         return;
       }
       target.state = updateWorkingState(target.state, {
+        now: dependencies.clock.now(),
         outcome: classifyRunOutcome(event.messages),
         type: "runEnded",
       });
@@ -473,7 +487,10 @@ export const createStatusExtension =
         return;
       }
       stopMetrics(target);
-      target.state = updateWorkingState(target.state, { type: "settled" });
+      target.state = updateWorkingState(target.state, {
+        now: dependencies.clock.now(),
+        type: "settled",
+      });
       showSettledOutcome(target);
     });
   };

@@ -10,31 +10,43 @@ describe("Working lifecycle model", () => {
   it.each([
     ["inactive", { now: 1000, type: "started" }, "active"],
     ["inactive", { output: 1, type: "assistantUpdated" }, "inactive"],
-    ["inactive", { output: 1, type: "assistantEnded" }, "inactive"],
-    ["inactive", { outcome: { kind: "done" }, type: "runEnded" }, "inactive"],
-    ["inactive", { type: "settled" }, "inactive"],
+    ["inactive", { now: 0, output: 1, type: "assistantEnded" }, "inactive"],
+    [
+      "inactive",
+      { now: 0, outcome: { kind: "done" }, type: "runEnded" },
+      "inactive",
+    ],
+    ["inactive", { now: 0, type: "settled" }, "inactive"],
     ["inactive", { type: "shutdown" }, "inactive"],
     ["active", { now: 2000, type: "started" }, "active"],
     ["active", { output: 1, type: "assistantUpdated" }, "active"],
-    ["active", { output: 1, type: "assistantEnded" }, "active"],
-    ["active", { outcome: { kind: "done" }, type: "runEnded" }, "pending"],
-    ["active", { type: "settled" }, "settled"],
+    ["active", { now: 0, output: 1, type: "assistantEnded" }, "active"],
+    [
+      "active",
+      { now: 0, outcome: { kind: "done" }, type: "runEnded" },
+      "pending",
+    ],
+    ["active", { now: 0, type: "settled" }, "settled"],
     ["active", { type: "shutdown" }, "inactive"],
     ["pending", { now: 2000, type: "started" }, "active"],
     ["pending", { output: 1, type: "assistantUpdated" }, "pending"],
-    ["pending", { output: 1, type: "assistantEnded" }, "pending"],
+    ["pending", { now: 0, output: 1, type: "assistantEnded" }, "pending"],
     [
       "pending",
-      { outcome: { kind: "cancelled" }, type: "runEnded" },
+      { now: 0, outcome: { kind: "cancelled" }, type: "runEnded" },
       "pending",
     ],
-    ["pending", { type: "settled" }, "settled"],
+    ["pending", { now: 0, type: "settled" }, "settled"],
     ["pending", { type: "shutdown" }, "inactive"],
     ["settled", { now: 2000, type: "started" }, "active"],
     ["settled", { output: 1, type: "assistantUpdated" }, "settled"],
-    ["settled", { output: 1, type: "assistantEnded" }, "settled"],
-    ["settled", { outcome: { kind: "done" }, type: "runEnded" }, "settled"],
-    ["settled", { type: "settled" }, "settled"],
+    ["settled", { now: 0, output: 1, type: "assistantEnded" }, "settled"],
+    [
+      "settled",
+      { now: 0, outcome: { kind: "done" }, type: "runEnded" },
+      "settled",
+    ],
+    ["settled", { now: 0, type: "settled" }, "settled"],
     ["settled", { type: "shutdown" }, "inactive"],
   ] as const)("transitions %s through %s to %s", (phase, event, expected) => {
     const active = updateWorkingState(createWorkingState(), {
@@ -42,6 +54,7 @@ describe("Working lifecycle model", () => {
       type: "started",
     });
     const pending = updateWorkingState(active, {
+      now: 0,
       outcome: { kind: "error", message: "failure" },
       type: "runEnded",
     });
@@ -49,10 +62,71 @@ describe("Working lifecycle model", () => {
       active,
       inactive: createWorkingState(),
       pending,
-      settled: updateWorkingState(pending, { type: "settled" }),
+      settled: updateWorkingState(pending, { now: 0, type: "settled" }),
     };
 
     expect(updateWorkingState(states[phase], event).phase).toBe(expected);
+  });
+
+  it.each([
+    { now: 2500, output: 10, type: "assistantEnded" },
+    { now: 2500, outcome: { kind: "cancelled" }, type: "runEnded" },
+    { now: 2500, type: "settled" },
+  ] as const)("closes interrupted thinking on $type", (event) => {
+    let state = updateWorkingState(createWorkingState(), {
+      now: 0,
+      type: "started",
+    });
+    state = updateWorkingState(state, { now: 500, type: "thinkingStarted" });
+    state = updateWorkingState(state, { now: 1000, type: "thinkingStarted" });
+    state = updateWorkingState(state, event);
+    expect(state).toMatchObject({
+      thinkingMilliseconds: 2000,
+      thinkingObserved: true,
+      thinkingStartedAt: undefined,
+    });
+    state = updateWorkingState(state, { now: 9000, type: "settled" });
+    expect(state.thinkingMilliseconds).toBe(2000);
+    state = updateWorkingState(state, { now: 10_000, type: "started" });
+    expect(state).toMatchObject({
+      thinkingMilliseconds: 0,
+      thinkingObserved: false,
+    });
+  });
+
+  it.each(["inactive", "pending", "settled"] as const)(
+    "ignores thinking events while %s",
+    (phase) => {
+      const state = { ...createWorkingState(), phase };
+      expect(
+        updateWorkingState(state, { now: 1000, type: "thinkingStarted" })
+      ).toEqual(state);
+      expect(
+        updateWorkingState(state, { now: 2000, type: "thinkingEnded" })
+      ).toEqual(state);
+    }
+  );
+
+  it("records an end-only thinking event without inventing elapsed time", () => {
+    const active = updateWorkingState(createWorkingState(), {
+      now: 0,
+      type: "started",
+    });
+    const ended = updateWorkingState(active, {
+      now: 10_000,
+      type: "thinkingEnded",
+    });
+    expect(ended).toMatchObject({
+      thinkingMilliseconds: 0,
+      thinkingObserved: true,
+      thinkingStartedAt: undefined,
+    });
+    expect(
+      updateWorkingState(ended, { now: 11_000, type: "thinkingEnded" })
+    ).toEqual(ended);
+    expect(updateWorkingState(ended, { type: "shutdown" })).toEqual(
+      createWorkingState()
+    );
   });
 
   it("spans repeated starts, retries, and queued continuation until settled", () => {
@@ -61,15 +135,17 @@ describe("Working lifecycle model", () => {
     state = updateWorkingState(state, { now: 1000, type: "started" });
     state = updateWorkingState(state, { now: 2000, type: "started" });
     state = updateWorkingState(state, {
+      now: 0,
       outcome: { kind: "error", message: "temporary provider failure" },
       type: "runEnded",
     });
     state = updateWorkingState(state, { now: 3000, type: "started" });
     state = updateWorkingState(state, {
+      now: 0,
       outcome: { kind: "done" },
       type: "runEnded",
     });
-    state = updateWorkingState(state, { type: "settled" });
+    state = updateWorkingState(state, { now: 0, type: "settled" });
 
     expect(state).toMatchObject({
       outcome: { kind: "done" },
@@ -95,6 +171,7 @@ describe("Working lifecycle model", () => {
     expect(state.completedOutput + state.activeOutput).toBe(120);
 
     state = updateWorkingState(state, {
+      now: 0,
       output: 125,
       type: "assistantEnded",
     });
@@ -117,6 +194,7 @@ describe("Working lifecycle model", () => {
       type: "started",
     });
     state = updateWorkingState(state, {
+      now: 0,
       output: 0,
       type: "assistantEnded",
     });
@@ -131,6 +209,7 @@ describe("Working lifecycle model", () => {
       type: "assistantUpdated",
     });
     state = updateWorkingState(state, {
+      now: 0,
       output: 0,
       type: "assistantEnded",
     });
@@ -175,7 +254,9 @@ describe("Working lifecycle model", () => {
       type: "started",
     });
 
-    expect(updateWorkingState(active, { type: "settled" })).toMatchObject({
+    expect(
+      updateWorkingState(active, { now: 0, type: "settled" })
+    ).toMatchObject({
       outcome: { kind: "unknown" },
       phase: "settled",
     });

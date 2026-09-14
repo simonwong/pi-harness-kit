@@ -1,6 +1,12 @@
 # Pi UI Status Working smoke
 
-## Environment
+## Working row polish (#42 / #44)
+
+Automated coverage verifies active copy and missing-field omission, 3m/8m semantic tones, cumulative public-event thinking duration, interrupted thinking, motion fallback, native Loader selection, local midnight settlement for success/cancellation/error, and frozen outcomes. The existing factory tests cover escape hatches, non-TUI behavior, replacement, shutdown, theme changes, and narrow rendering.
+
+Focused Ghostty smoke for this revision is **pending**. The historical result below predates the polished copy and completion clock. Before marking this revision complete, exercise the default leading Pi Loader with new copy, streamed usage/thinking, success/cancellation/error completion clocks, outcome persistence and clearing on the next operation, narrow width, and `/reload`. Use automated evidence for 3m/8m thresholds; record if the chosen model does not emit thinking.
+
+## Historical environment
 
 - Date: 2026-08-27
 - Terminal: Ghostty 1.3.1 (`TERM_PROGRAM=ghostty`, `TERM=xterm-256color`, `COLORTERM=truecolor`)

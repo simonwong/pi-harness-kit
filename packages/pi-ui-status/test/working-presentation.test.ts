@@ -13,6 +13,8 @@ import {
   toneForElapsed,
 } from "../src/working-presentation.ts";
 
+const settledAt = new Date(2026, 8, 14, 22, 50).getTime();
+
 const colorCodes = {
   accent: 32,
   dim: 90,
@@ -34,6 +36,8 @@ const activeState = (overrides: Partial<WorkingState> = {}): WorkingState => ({
   outputReported: false,
   phase: "active",
   startedAt: 0,
+  thinkingMilliseconds: 0,
+  thinkingObserved: false,
   ...overrides,
 });
 
@@ -95,7 +99,8 @@ describe("Working presentation", () => {
     const errorLine = formatOutcome(
       { kind: "error", message: "连接失败，请检查 provider 配置" },
       299,
-      theme
+      theme,
+      settledAt
     );
 
     for (const width of [20, 40, 80]) {
@@ -145,12 +150,12 @@ describe("Working presentation", () => {
           "Moonwalking"
         )
       )
-    ).toBe("Moonwalking (20s)");
+    ).toBe("Moonwalking... (20s)");
     expect(
       stripVTControlCharacters(
         formatWorkingMessage(activeState(), 20_000, "off", theme, "Moonwalking")
       )
-    ).toBe("Working (20s)");
+    ).toBe("Working... (20s)");
   });
 
   it("formats reported output and omits output that has not been reported", () => {
@@ -158,7 +163,7 @@ describe("Working presentation", () => {
       stripVTControlCharacters(
         formatWorkingMessage(activeState(), 20_000, "full", theme)
       )
-    ).toBe("Vibing (20s)");
+    ).toBe("Vibing... (20s)");
     expect(
       stripVTControlCharacters(
         formatWorkingMessage(
@@ -172,7 +177,7 @@ describe("Working presentation", () => {
           theme
         )
       )
-    ).toBe("Vibing (↓ 1,284 20s)");
+    ).toBe("Vibing... (20s · ↓ 1,284 tokens)");
   });
 
   it("formats elapsed time as compact English duration parts", () => {
@@ -182,11 +187,35 @@ describe("Working presentation", () => {
     expect(formatDuration(3899)).toBe("1h 4m 59s");
   });
 
-  it("escalates elapsed tone at one and three minutes", () => {
-    expect(toneForElapsed(59)).toBe("accent");
-    expect(toneForElapsed(60)).toBe("warning");
-    expect(toneForElapsed(179)).toBe("warning");
-    expect(toneForElapsed(180)).toBe("error");
+  it("escalates elapsed tone at three and eight minutes", () => {
+    expect(toneForElapsed(179)).toBe("accent");
+    expect(toneForElapsed(180)).toBe("warning");
+    expect(toneForElapsed(479)).toBe("warning");
+    expect(toneForElapsed(480)).toBe("error");
+    const semanticTheme = {
+      fg: (color: string, text: string) => `<${color}>${text}</${color}>`,
+    };
+    for (const [now, tone, duration] of [
+      [179_000, "accent", "2m 59s"],
+      [180_000, "warning", "3m 0s"],
+      [480_000, "error", "8m 0s"],
+    ] as const) {
+      const message = formatWorkingMessage(
+        activeState({
+          activeOutput: 823,
+          outputReported: true,
+          thinkingMilliseconds: 2500,
+          thinkingObserved: true,
+        }),
+        now,
+        "full",
+        semanticTheme,
+        "Cooking"
+      );
+      expect(message).toBe(
+        `<${tone}>Cooking...</${tone}><muted> (</muted><${tone}>${duration}</${tone}><muted> · ↓ 823 tokens · thought for 2s</muted><muted>)</muted>`
+      );
+    }
   });
 
   it("rebuilds semantic ANSI for a different theme without changing visible copy", () => {
@@ -217,12 +246,16 @@ describe("Working presentation", () => {
   });
 
   it("renders duration-bearing English outcomes and safe error information", () => {
-    const done = formatOutcome({ kind: "done" }, 299, theme);
+    const done = formatOutcome({ kind: "done" }, 299, theme, settledAt);
     expect(done).toContain("\u001B[90m");
-    expect(stripVTControlCharacters(done)).toBe("Worked for 4m 59s");
+    expect(stripVTControlCharacters(done)).toBe(
+      "Worked for 4m 59s · done 22:50"
+    );
     expect(
-      stripVTControlCharacters(formatOutcome({ kind: "cancelled" }, 18, theme))
-    ).toBe("Cancelled after 18s");
+      stripVTControlCharacters(
+        formatOutcome({ kind: "cancelled" }, 18, theme, settledAt)
+      )
+    ).toBe("Cancelled after 18s · done 22:50");
     expect(
       stripVTControlCharacters(
         formatOutcome(
@@ -231,17 +264,27 @@ describe("Working presentation", () => {
             message: "\u001B[31mprovider\u001B[0m\n request   failed",
           },
           12,
-          theme
+          theme,
+          settledAt
         )
       )
-    ).toBe("! Error after 12s: provider request failed");
+    ).toBe("! Error after 12s: provider request failed · done 22:50");
     expect(
-      stripVTControlCharacters(formatOutcome({ kind: "error" }, 12, theme))
-    ).toBe("! Error after 12s: Unknown error");
+      stripVTControlCharacters(
+        formatOutcome({ kind: "error" }, 12, theme, settledAt)
+      )
+    ).toBe("! Error after 12s: Unknown error · done 22:50");
 
     const longError = stripVTControlCharacters(
-      formatOutcome({ kind: "error", message: "x".repeat(200) }, 12, theme)
+      formatOutcome(
+        { kind: "error", message: "x".repeat(200) },
+        12,
+        theme,
+        settledAt
+      )
     );
-    expect(longError).toBe(`! Error after 12s: ${"x".repeat(200)}`);
+    expect(longError).toBe(
+      `! Error after 12s: ${"x".repeat(200)} · done 22:50`
+    );
   });
 });
